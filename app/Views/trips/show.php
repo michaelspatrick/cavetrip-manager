@@ -2,6 +2,7 @@
 use CaveTrip\Core\Csrf;
 use CaveTrip\Core\View;
 $participants = $participants ?? [];
+$latestWaiver = $latestWaiver ?? null;
 $shareUrl = app_url('/trip/signup?token=' . (string)($trip['share_token'] ?? ''));
 $activeCount = (int)($trip['registered_count'] ?? 0);
 $max = $trip['max_attendees'] === null ? null : (int)$trip['max_attendees'];
@@ -28,7 +29,7 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
     <div class="panel metric-card">
         <span class="metric-label">Waivers Signed</span>
         <strong><?= (int)($trip['signed_count'] ?? 0) ?></strong>
-        <p class="muted">Signature capture comes in the waiver release.</p>
+        <p class="muted">Participants can sign by link or on the leader’s device.</p>
     </div>
     <div class="panel metric-card">
         <span class="metric-label">Callout</span>
@@ -62,6 +63,27 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
 <section class="panel mt">
     <div class="section-header">
         <div>
+            <h2>Waiver Finalization</h2>
+            <p class="muted">Finalize after the active roster is complete and all active participants have signed.</p>
+        </div>
+        <?php if ($latestWaiver): ?>
+            <a class="button secondary" target="_blank" href="/waivers/view?token=<?= View::e((string)$latestWaiver['public_token']) ?>">View Final Waiver</a>
+        <?php endif; ?>
+    </div>
+    <?php if (empty($trip['waiver_template_id'])): ?>
+        <div class="alert error">No waiver template is selected for this trip. Edit the trip and choose a template first.</div>
+    <?php else: ?>
+        <form method="post" action="/trips/waiver/finalize?trip_id=<?= (int)$trip['id'] ?>" class="inline-form">
+            <?= Csrf::field() ?>
+            <button class="button" type="submit">Finalize Waiver</button>
+        </form>
+        <p class="muted">Email delivery to the landowner, participants, and grotto address will be wired into the notification release.</p>
+    <?php endif; ?>
+</section>
+
+<section class="panel mt">
+    <div class="section-header">
+        <div>
             <h2>Participants</h2>
             <p class="muted">Trip leaders can add latecomers here and remove participants from the active roster.</p>
         </div>
@@ -69,13 +91,20 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
     </div>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Emergency Contact</th><th>Medical Notes</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Signature</th><th>Emergency Contact</th><th>Medical Notes</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($participants as $participant): ?>
                 <tr>
                     <td><strong><?= View::e($participant['name']) ?></strong><?php if ((int)$participant['is_minor'] === 1): ?><br><span class="badge">Minor</span><?php endif; ?></td>
                     <td><?= View::e($participant['email']) ?><br><span class="muted"><?= View::e($participant['phone'] ?? '') ?></span></td>
                     <td><span class="badge badge-status"><?= View::e($participant['participant_status']) ?></span></td>
+                    <td>
+                        <?php if (!empty($participant['signed_at'])): ?>
+                            <span class="badge success-badge">Signed</span><br><span class="muted"><?= View::e((string)$participant['signed_at']) ?></span>
+                        <?php else: ?>
+                            <a href="/sign?token=<?= View::e((string)($participant['signature_token'] ?? '')) ?>" target="_blank">Open sign link</a>
+                        <?php endif; ?>
+                    </td>
                     <td><?= View::e($participant['emergency_contact_name']) ?><br><span class="muted"><?= View::e($participant['emergency_contact_phone']) ?></span></td>
                     <td><?= $participant['medical_notes'] ? View::e(mb_strimwidth((string)$participant['medical_notes'], 0, 80, '…')) : '<span class="muted">None entered</span>' ?></td>
                     <td>
@@ -89,7 +118,7 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
                     </td>
                 </tr>
             <?php endforeach; ?>
-            <?php if ($participants === []): ?><tr><td colspan="6" class="muted">No participants yet.</td></tr><?php endif; ?>
+            <?php if ($participants === []): ?><tr><td colspan="7" class="muted">No participants yet.</td></tr><?php endif; ?>
             </tbody>
         </table>
     </div>

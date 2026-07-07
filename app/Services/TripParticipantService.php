@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CaveTrip\Services;
 
 use PDO;
+use CaveTrip\Services\TokenService;
 
 final class TripParticipantService
 {
@@ -49,12 +50,12 @@ final class TripParticipantService
         }
 
         $stmt = $this->db->prepare('INSERT INTO trip_participants
-            (trip_id, user_id, name, email, phone, participant_status,
+            (trip_id, user_id, name, email, phone, participant_status, signature_token,
              emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
              medical_notes, allergies, medications, conditions, physical_limitations,
              is_minor, guardian_name, guardian_email, created_at)
             VALUES
-            (:trip_id, :user_id, :name, :email, :phone, :participant_status,
+            (:trip_id, :user_id, :name, :email, :phone, :participant_status, :signature_token,
              :emergency_contact_name, :emergency_contact_phone, :emergency_contact_relationship,
              :medical_notes, :allergies, :medications, :conditions, :physical_limitations,
              :is_minor, :guardian_name, :guardian_email, NOW())');
@@ -65,6 +66,7 @@ final class TripParticipantService
             'email' => $this->requiredEmail($data['email'] ?? ''),
             'phone' => $this->nullableString($data['phone'] ?? null),
             'participant_status' => $status,
+            'signature_token' => TokenService::make(),
             'emergency_contact_name' => $this->requiredString($data['emergency_contact_name'] ?? '', 'Emergency contact name is required.'),
             'emergency_contact_phone' => $this->requiredString($data['emergency_contact_phone'] ?? '', 'Emergency contact phone is required.'),
             'emergency_contact_relationship' => $this->nullableString($data['emergency_contact_relationship'] ?? null),
@@ -91,6 +93,66 @@ final class TripParticipantService
     {
         $stmt = $this->db->prepare('UPDATE trip_participants SET participant_status = \'cancelled\', updated_at = NOW() WHERE id = :id AND trip_id = :trip_id AND email = :email');
         $stmt->execute(['id' => $participantId, 'trip_id' => $tripId, 'email' => strtolower(trim($email))]);
+    }
+
+
+
+    /** @return array<string, mixed>|null */
+    public function findBySignatureToken(string $token): ?array
+    {
+        $stmt = $this->db->prepare('SELECT tp.*, t.title AS trip_title, t.trip_date, t.meeting_time, t.cave_description, c.name AS cave_name
+            FROM trip_participants tp
+            INNER JOIN trips t ON t.id = tp.trip_id
+            LEFT JOIN caves c ON c.id = t.cave_id
+            WHERE tp.signature_token = :signature_token
+            LIMIT 1');
+        $stmt->execute(['signature_token' => trim($token)]);
+        $participant = $stmt->fetch();
+        return $participant ?: null;
+    }
+
+    public function saveSignature(string $token, string $signatureData, ?string $ip, ?string $userAgent): void
+    {
+        $token = trim($token);
+        if ($token === '') {
+            throw new \InvalidArgumentException('Invalid signature link.');
+        }
+        if (!str_starts_with($signatureData, 'data:image/png;base64,')) {
+            throw new \InvalidArgumentException('Please sign before submitting.');
+        }
+        if (strlen($signatureData) > 750000) {
+            throw new \InvalidArgumentException('Signature image is too large. Please clear and sign again.');
+        }
+
+        $stmt = $this->db->prepare('UPDATE trip_participants SET
+            signature_data = :signature_data,
+            signed_at = NOW(),
+            signed_ip = :signed_ip,
+            user_agent = :user_agent,
+            participant_status = CASE WHEN participant_status = \'registered\' THEN \'signed\' ELSE participant_status END,
+            updated_at = NOW()
+            WHERE signature_token = :signature_token');
+        $stmt->execute([
+            'signature_data' => $signatureData,
+            'signed_ip' => $ip,
+            'user_agent' => $userAgent,
+            'signature_token' => $token,
+        ]);
+
+        if ($stmt->rowCount() === 0) {
+            throw new \InvalidArgumentException('Signature link was not found.');
+        }
+    }
+
+    public function ensureSignatureTokensForTrip(int $tripId): void
+    {
+        $stmt = $this->db->prepare('SELECT id FROM trip_participants WHERE trip_id = :trip_id AND signature_token IS NULL');
+        $stmt->execute(['trip_id' => $tripId]);
+        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        $update = $this->db->prepare('UPDATE trip_participants SET signature_token = :signature_token WHERE id = :id');
+        foreach ($ids as $id) {
+            $update->execute(['signature_token' => TokenService::make(), 'id' => (int)$id]);
+        }
     }
 
     private function requiredString(mixed $value, string $message): string

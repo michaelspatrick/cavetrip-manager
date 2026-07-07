@@ -15,6 +15,7 @@ use CaveTrip\Services\LandownerService;
 use CaveTrip\Services\TripService;
 use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\WaiverTemplateService;
+use CaveTrip\Services\WaiverService;
 
 final class TripController
 {
@@ -66,11 +67,17 @@ final class TripController
             return View::render($app, 'pages/404', ['title' => 'Trip Not Found']);
         }
 
+        $participantService = new TripParticipantService($app->db());
+        $participantService->ensureSignatureTokensForTrip((int)$trip['id']);
+        $participants = $participantService->listForTrip((int)$trip['id']);
+        $latestWaiver = (new WaiverService($app->db()))->latestForTrip((int)$trip['id']);
+
         return View::render($app, 'trips/show', [
             'title' => 'Manage Trip',
             'currentUser' => $currentUser,
             'trip' => $trip,
-            'participants' => (new TripParticipantService($app->db()))->listForTrip((int)$trip['id']),
+            'participants' => $participants,
+            'latestWaiver' => $latestWaiver,
         ]);
     }
 

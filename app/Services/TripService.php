@@ -15,11 +15,12 @@ final class TripService
     /** @return array<int, array<string, mixed>> */
     public function listForGrotto(int $grottoId): array
     {
-        $stmt = $this->db->prepare('SELECT trips.*, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
+        $stmt = $this->db->prepare('SELECT trips.*, grottos.name AS grotto_name, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status IN (\'registered\',\'signed\')) AS registered_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status = \'waitlisted\') AS waitlist_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.signed_at IS NOT NULL AND tp.participant_status IN (\'registered\',\'signed\')) AS signed_count
             FROM trips
+            INNER JOIN grottos ON grottos.id = trips.grotto_id
             LEFT JOIN caves ON caves.id = trips.cave_id
             LEFT JOIN landowners ON landowners.id = trips.landowner_id
             LEFT JOIN users ON users.id = trips.trip_leader_user_id
@@ -32,11 +33,12 @@ final class TripService
     /** @return array<string, mixed>|null */
     public function findForGrotto(int $id, int $grottoId): ?array
     {
-        $stmt = $this->db->prepare('SELECT trips.*, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
+        $stmt = $this->db->prepare('SELECT trips.*, grottos.name AS grotto_name, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status IN (\'registered\',\'signed\')) AS registered_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status = \'waitlisted\') AS waitlist_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.signed_at IS NOT NULL AND tp.participant_status IN (\'registered\',\'signed\')) AS signed_count
             FROM trips
+            INNER JOIN grottos ON grottos.id = trips.grotto_id
             LEFT JOIN caves ON caves.id = trips.cave_id
             LEFT JOIN landowners ON landowners.id = trips.landowner_id
             LEFT JOIN users ON users.id = trips.trip_leader_user_id
@@ -52,11 +54,12 @@ final class TripService
     /** @return array<string, mixed>|null */
     public function findByShareToken(string $token): ?array
     {
-        $stmt = $this->db->prepare('SELECT trips.*, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
+        $stmt = $this->db->prepare('SELECT trips.*, grottos.name AS grotto_name, caves.name AS cave_name, landowners.name AS landowner_name, users.name AS leader_name,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status IN (\'registered\',\'signed\')) AS registered_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.participant_status = \'waitlisted\') AS waitlist_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id = trips.id AND tp.signed_at IS NOT NULL AND tp.participant_status IN (\'registered\',\'signed\')) AS signed_count
             FROM trips
+            INNER JOIN grottos ON grottos.id = trips.grotto_id
             LEFT JOIN caves ON caves.id = trips.cave_id
             LEFT JOIN landowners ON landowners.id = trips.landowner_id
             LEFT JOIN users ON users.id = trips.trip_leader_user_id

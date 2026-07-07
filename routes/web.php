@@ -11,6 +11,8 @@ use CaveTrip\Controllers\TripController;
 use CaveTrip\Controllers\TripParticipantController;
 use CaveTrip\Controllers\UserController;
 use CaveTrip\Controllers\WaiverTemplateController;
+use CaveTrip\Controllers\WaiverController;
+use CaveTrip\Controllers\SignatureController;
 use CaveTrip\Core\Application;
 use CaveTrip\Core\Router;
 use CaveTrip\Core\View;
@@ -64,6 +66,11 @@ $router->get('/caves/create', [new CaveController(), 'create']);
 $router->post('/caves', [new CaveController(), 'store']);
 $router->get('/caves/edit', [new CaveController(), 'edit']);
 $router->post('/caves/update', [new CaveController(), 'update']);
+
+$router->post('/trips/waiver/finalize', [new WaiverController(), 'finalize']);
+$router->get('/waivers/view', [new WaiverController(), 'view']);
+$router->get('/sign', [new SignatureController(), 'sign']);
+$router->post('/sign', [new SignatureController(), 'store']);
 
 $router->get('/health', static function (Application $app): string {
     $dbStatus = 'not checked';
