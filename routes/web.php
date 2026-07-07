@@ -73,7 +73,10 @@ $router->get('/sign', [new SignatureController(), 'sign']);
 $router->post('/sign', [new SignatureController(), 'store']);
 
 $router->get('/health', static function (Application $app): string {
+    $version = require $app->rootPath('config/version.php');
+
     $dbStatus = 'not checked';
+
     try {
         $app->db()->query('SELECT 1');
         $dbStatus = 'ok';
@@ -83,8 +86,12 @@ $router->get('/health', static function (Application $app): string {
     }
 
     header('Content-Type: application/json');
+
     return json_encode([
-        'app' => 'CaveTrip Manager',
+        'app' => $version['name'],
+        'version' => $version['version'],
+        'build' => $version['build'],
+        'release_name' => $version['release_name'],
         'status' => http_response_code() === 500 ? 'error' : 'ok',
         'database' => $dbStatus,
         'time' => date(DATE_ATOM),
