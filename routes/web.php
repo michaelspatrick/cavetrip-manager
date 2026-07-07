@@ -10,6 +10,7 @@ use CaveTrip\Controllers\LandownerController;
 use CaveTrip\Controllers\TripController;
 use CaveTrip\Controllers\TripParticipantController;
 use CaveTrip\Controllers\UserController;
+use CaveTrip\Controllers\WaiverTemplateController;
 use CaveTrip\Core\Application;
 use CaveTrip\Core\Router;
 use CaveTrip\Core\View;
@@ -32,6 +33,12 @@ $router->post('/admin/grotto/settings', [new GrottoSettingsController(), 'update
 $router->get('/users', [new UserController(), 'index']);
 $router->get('/users/create', [new UserController(), 'create']);
 $router->post('/users', [new UserController(), 'store']);
+
+$router->get('/waiver-templates', [new WaiverTemplateController(), 'index']);
+$router->get('/waiver-templates/create', [new WaiverTemplateController(), 'create']);
+$router->post('/waiver-templates', [new WaiverTemplateController(), 'store']);
+$router->get('/waiver-templates/edit', [new WaiverTemplateController(), 'edit']);
+$router->post('/waiver-templates/update', [new WaiverTemplateController(), 'update']);
 
 
 $router->get('/trips', [new TripController(), 'index']);

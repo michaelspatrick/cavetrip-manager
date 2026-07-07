@@ -23,6 +23,7 @@
             <li>User and role administration</li>
             <li>Landowners and cave records</li>
             <li>Trip creation and signup workflow</li>
+            <li>Waiver finalization and signature rendering</li>
         </ul>
     </article>
 
@@ -33,6 +34,8 @@
                 <a class="button" href="/admin/grotto/settings">Grotto Settings</a>
                 <a class="button secondary" href="/users">Users</a>
                 <a class="button secondary" href="/users/create">Create User</a>
+                <a class="button secondary" href="/waiver-templates">Waiver Templates</a>
+                <a class="button secondary" href="/trips">Trips</a>
             <?php else: ?>
                 <span class="muted">Trip tools will appear here for members in the next release.</span>
             <?php endif; ?>

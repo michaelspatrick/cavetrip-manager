@@ -39,6 +39,7 @@ $error = Session::flash('error');
                 <?php if (in_array($currentUserForLayout['role'], ['super_admin', 'grotto_admin'], true)): ?>
                     <a href="/admin/grotto/settings">Grotto Settings</a>
                     <a href="/users">Users</a>
+                    <a href="/waiver-templates">Waivers</a>
                     <a href="/landowners">Landowners</a>
                     <a href="/caves">Caves</a>
                 <?php endif; ?>

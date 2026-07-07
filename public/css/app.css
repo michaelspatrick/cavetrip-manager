@@ -101,3 +101,44 @@ code { background: #f1eee7; border-radius: 6px; padding: .15rem .35rem; }
     .dashboard-grid, .stat-grid, .form-grid, .detail-list, .signup-summary { grid-template-columns: 1fr; }
     .main-content { padding-top: 24px; }
 }
+
+/* v0.8 waiver template editor */
+.grid.two.wide-left {
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+}
+.code-editor {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    min-height: 520px;
+    line-height: 1.45;
+}
+.helper-panel {
+    align-self: start;
+    position: sticky;
+    top: 1rem;
+}
+.placeholder-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.placeholder-list code {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 999px;
+    color: #3730a3;
+    cursor: pointer;
+    display: inline-block;
+    font-size: .82rem;
+    padding: .35rem .55rem;
+}
+.placeholder-list code:hover {
+    background: #e0e7ff;
+}
+@media (max-width: 900px) {
+    .grid.two.wide-left {
+        grid-template-columns: 1fr;
+    }
+    .helper-panel {
+        position: static;
+    }
+}
