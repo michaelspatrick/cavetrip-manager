@@ -16,6 +16,7 @@ use CaveTrip\Controllers\SignatureController;
 use CaveTrip\Core\Application;
 use CaveTrip\Core\Router;
 use CaveTrip\Core\View;
+use CaveTrip\Controllers\AboutController;
 
 $router = new Router();
 
@@ -97,5 +98,7 @@ $router->get('/health', static function (Application $app): string {
         'time' => date(DATE_ATOM),
     ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
 });
+
+$router->get('/about', [new AboutController(), 'index']);
 
 return $router;

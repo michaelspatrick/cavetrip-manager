@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.10.3 - 2026-07-07
+
+### Added
+- Added `/about` page.
+- Added data dictionary foundation.
+- Added service registry foundation.
+
 ## v0.10.2 - 2026-07-07
 
 ### Added
