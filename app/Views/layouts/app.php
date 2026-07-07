@@ -59,8 +59,14 @@ $error = Session::flash('error');
     <?php if ($error): ?><div class="alert error"><?= e($error) ?></div><?php endif; ?>
     <?= $content ?>
 </main>
-<footer class="site-footer">
-    <div class="container">Open-source cave trip planning, waiver, landowner, and safety management software.</div>
+<?php $version = require $app->rootPath('config/version.php'); ?>
+
+<footer class="app-footer">
+    <div>
+        <?= htmlspecialchars($version['name']) ?>
+        v<?= htmlspecialchars($version['version']) ?>
+        · Build <?= htmlspecialchars($version['build']) ?>
+    </div>
 </footer>
 </body>
 </html>
