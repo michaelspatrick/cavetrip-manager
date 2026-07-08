@@ -307,3 +307,135 @@ tr:last-child td {
         grid-template-columns: 1fr;
     }
 }
+
+/* v0.11.0 UI/Form readability cleanup */
+
+.app-footer {
+    margin-top: 60px;
+    padding: 18px 0;
+    border-top: 1px solid #ddd;
+    background: #fafafa;
+    color: #666;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.app-footer .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.panel,
+.card {
+    background: #fff;
+    border: 1px solid #d9dee7;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.form-stack,
+.form-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 18px;
+    max-width: 820px;
+}
+
+.form-stack > *,
+.form-grid > * {
+    min-width: 0;
+}
+
+label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #cfd6e0;
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 3px solid rgba(35, 79, 54, 0.18);
+    border-color: #234f36;
+}
+
+textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+textarea[name="html_body"],
+textarea[name="body"],
+textarea.code-editor {
+    min-height: 420px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.inline-form button {
+    width: auto;
+}
+
+button,
+.btn,
+input[type="submit"] {
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #234f36;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-secondary,
+.btn-light,
+a.button-secondary {
+    background: #eef2f0;
+    color: #1f2937;
+    border-color: #d9dee7;
+}
+
+.help-text,
+.text-muted {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 850px) {
+    .form-stack,
+    .form-grid {
+        max-width: 100%;
+    }
+}
+
