@@ -62,8 +62,8 @@ $error = Session::flash('error');
 <?php $version = require $app->rootPath('config/version.php'); ?>
 
 <footer class="app-footer">
-    <div>
-        <?= htmlspecialchars($version['name']) ?>
+    <div class="container">
+        CaveTrip Manager
         v<?= htmlspecialchars($version['version']) ?>
         · Build <?= htmlspecialchars($version['build']) ?>
     </div>
