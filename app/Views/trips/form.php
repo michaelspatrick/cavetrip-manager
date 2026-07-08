@@ -11,12 +11,12 @@ $datetimeValue = static function (?string $value): string {
 <div class="page-header">
     <div>
         <h1><?= View::e($title) ?></h1>
-        <p>Create a trip shell now; participant signup, waiver signatures, and notifications come next.</p>
+        <p class="text-muted">Create or update trip details, capacity, signup rules, callout time, and waiver settings.</p>
     </div>
     <a class="button secondary" href="/trips">Back to Trips</a>
 </div>
 
-<form method="post" action="<?= View::e($action) ?>" class="card form-grid">
+<form method="post" action="<?= View::e($action) ?>" class="card form-stack">
     <?= Csrf::field() ?>
 
     <label>
@@ -112,22 +112,23 @@ $datetimeValue = static function (?string $value): string {
         Enable waitlist when max attendees is reached
     </label>
 
-    <label class="full-width">
+    <label>
         Meeting Location / Public Instructions
-        <textarea name="meeting_location" rows="3"><?= View::e($trip['meeting_location'] ?? '') ?></textarea>
+        <textarea name="meeting_location" rows="4"><?= View::e($trip['meeting_location'] ?? '') ?></textarea>
     </label>
 
-    <label class="full-width">
+    <label>
         Cave / Permission Area Description
-        <textarea name="cave_description" rows="3"><?= View::e($trip['cave_description'] ?? '') ?></textarea>
+        <textarea name="cave_description" rows="4"><?= View::e($trip['cave_description'] ?? '') ?></textarea>
     </label>
 
-    <label class="full-width">
+    <label>
         Leader Notes
-        <textarea name="notes" rows="4"><?= View::e($trip['notes'] ?? '') ?></textarea>
+        <textarea name="notes" rows="5"><?= View::e($trip['notes'] ?? '') ?></textarea>
     </label>
 
-    <div class="form-actions full-width">
+    <div class="form-actions">
         <button type="submit" class="button">Save Trip</button>
+        <a class="button secondary" href="/trips">Cancel</a>
     </div>
 </form>

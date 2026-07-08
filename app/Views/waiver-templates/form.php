@@ -28,51 +28,50 @@ HTML;
 <div class="page-header">
     <div>
         <h1><?= $isEdit ? 'Edit Waiver Template' : 'Add Waiver Template' ?></h1>
-        <p>Use placeholders to merge trip, grotto, landowner, cave, participant, and signature data.</p>
+        <p class="text-muted">Use placeholders to merge trip, grotto, landowner, cave, participant, and signature data.</p>
     </div>
     <a class="button secondary" href="/waiver-templates">Back to Templates</a>
 </div>
 
-<div class="grid two wide-left">
-    <form method="post" action="<?= View::e($action) ?>" class="panel form-stack">
-        <?= Csrf::field() ?>
+<form method="post" action="<?= View::e($action) ?>" class="panel form-stack">
+    <?= Csrf::field() ?>
 
-        <div class="form-grid">
-            <label>Name
-                <input type="text" name="name" required value="<?= $value('name') ?>" placeholder="Landowner Liability Release">
-            </label>
-            <label>Slug
-                <input type="text" name="slug" value="<?= $value('slug') ?>" placeholder="landowner-liability-release">
-                <small>Leave blank to generate from the name.</small>
-            </label>
-        </div>
+    <label>
+        Name
+        <input type="text" name="name" required value="<?= $value('name') ?>" placeholder="Landowner Liability Release">
+    </label>
 
-        <label>Description
-            <textarea name="description" rows="3" placeholder="When this waiver should be used."><?= $value('description') ?></textarea>
-        </label>
+    <label>
+        Slug
+        <input type="text" name="slug" value="<?= $value('slug') ?>" placeholder="landowner-liability-release">
+        <small class="help-text">Leave blank to generate from the name.</small>
+    </label>
 
-        <label>HTML Body
-            <textarea name="html_body" rows="22" required class="code-editor"><?= $isEdit ? $value('html_body') : View::e($defaultHtml) ?></textarea>
-        </label>
+    <label>
+        Description
+        <textarea name="description" rows="4" placeholder="When this waiver should be used."><?= $value('description') ?></textarea>
+    </label>
 
-        <label class="checkbox-row">
-            <input type="checkbox" name="active" value="1" <?= $checked ?>> Active
-        </label>
+    <label>
+        HTML Body
+        <textarea name="html_body" rows="22" required class="code-editor"><?= $isEdit ? $value('html_body') : View::e($defaultHtml) ?></textarea>
+    </label>
 
-        <div class="button-row">
-            <button type="submit" class="button primary"><?= $isEdit ? 'Save Template' : 'Create Template' ?></button>
-        </div>
-    </form>
+    <label class="checkbox-row">
+        <input type="checkbox" name="active" value="1" <?= $checked ?>>
+        Active
+    </label>
 
-    <aside class="panel helper-panel">
+    <div class="panel helper-panel">
         <h2>Available Placeholders</h2>
-        <p class="muted">Copy these into the HTML body. They will be replaced when a trip waiver is finalized.</p>
+        <p class="text-muted">Copy these into the HTML body. They will be replaced when a trip waiver is finalized.</p>
+
         <div class="placeholder-list">
             <?php foreach ($placeholders as $placeholder): ?>
                 <code onclick="navigator.clipboard && navigator.clipboard.writeText(this.textContent)"><?= View::e($placeholder) ?></code>
             <?php endforeach; ?>
         </div>
-        <hr>
+
         <h3>Notes</h3>
         <ul class="check-list">
             <li>Keep legal language in the template body.</li>
@@ -80,5 +79,10 @@ HTML;
             <li>Use <code>{{SIGNATURE_BLOCKS}}</code> where signature images and timestamps should appear.</li>
             <li>Have an attorney review waiver language before relying on it.</li>
         </ul>
-    </aside>
-</div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button primary"><?= $isEdit ? 'Save Template' : 'Create Template' ?></button>
+        <a class="button secondary" href="/waiver-templates">Cancel</a>
+    </div>
+</form>
