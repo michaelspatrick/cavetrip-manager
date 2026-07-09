@@ -15,9 +15,8 @@ $isActive = static function (string $path) use ($currentPath): string {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= htmlspecialchars($title ?? $version['name']) ?></title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v=0.14.1">
 </head>
 <body>
 <div class="ctm-shell">
@@ -43,9 +42,7 @@ $isActive = static function (string $path) use ($currentPath): string {
 
     <div class="ctm-main">
         <header class="ctm-topbar">
-            <div>
-                <div class="ctm-page-title"><?= htmlspecialchars($title ?? 'Dashboard') ?></div>
-            </div>
+            <div class="ctm-page-title"><?= htmlspecialchars($title ?? 'Dashboard') ?></div>
 
             <form method="post" action="/logout" class="m-0">
                 <?= Csrf::field() ?>
