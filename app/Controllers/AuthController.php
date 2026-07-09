@@ -10,7 +10,7 @@ use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
 use CaveTrip\Services\AuthService;
 
-final class AuthController
+final class AuthController extends BaseController
 {
     public function showLogin(Application $app): string
     {
@@ -27,9 +27,18 @@ final class AuthController
         $password = (string)($_POST['password'] ?? '');
         $auth = new AuthService($app->db());
 
-        if ($auth->attempt($email, $password) === null) {
+        $user = $auth->attempt($email, $password);
+
+        if ($user === null) {
             Session::flash('error', 'Invalid email or password.');
             return Http::redirect('/login');
+        }
+
+        $grottoId = (int)($user['grotto_id'] ?? 0);
+        $userId = (int)($user['id'] ?? 0);
+
+        if ($grottoId > 0 && $userId > 0) {
+            $this->audit($app)->userLoggedIn($grottoId, $userId);
         }
 
         return Http::redirect('/dashboard');
@@ -38,7 +47,21 @@ final class AuthController
     public function logout(Application $app): string
     {
         Http::requirePostCsrf();
-        (new AuthService($app->db()))->logout();
+
+        $auth = new AuthService($app->db());
+        $user = $auth->user();
+
+        if (is_array($user)) {
+            $grottoId = (int)($user['grotto_id'] ?? 0);
+            $userId = (int)($user['id'] ?? 0);
+
+            if ($grottoId > 0 && $userId > 0) {
+                $this->audit($app)->userLoggedOut($grottoId, $userId);
+            }
+        }
+
+        $auth->logout();
+
         return Http::redirect('/login');
     }
 }

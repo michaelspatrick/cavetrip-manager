@@ -8,8 +8,6 @@ use CaveTrip\Core\Application;
 use CaveTrip\Core\Http;
 use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
-use CaveTrip\Services\AuditLogService;
-use CaveTrip\Services\AuthService;
 use CaveTrip\Services\CaveService;
 use CaveTrip\Services\LandownerService;
 use CaveTrip\Services\TripService;
@@ -17,7 +15,7 @@ use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\WaiverTemplateService;
 use CaveTrip\Services\WaiverService;
 
-final class TripController
+final class TripController extends BaseController
 {
     public function index(Application $app): string
     {
@@ -46,7 +44,7 @@ final class TripController
 
         try {
             $id = (new TripService($app->db()))->create($grottoId, $_POST, $currentUser);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'created', 'trip', $id);
+            $this->audit($app)->tripCreated($grottoId, $this->userId($currentUser), $id);
             Session::flash('success', 'Trip created.');
             return Http::redirect('/trips/show?id=' . $id);
         } catch (\Throwable $e) {
@@ -105,7 +103,7 @@ final class TripController
 
         try {
             (new TripService($app->db()))->update($id, $grottoId, $_POST, $currentUser);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'updated', 'trip', $id);
+            $this->audit($app)->tripUpdated($grottoId, $this->userId($currentUser), $id);
             Session::flash('success', 'Trip updated.');
             return Http::redirect('/trips/show?id=' . $id);
         } catch (\Throwable $e) {
@@ -124,7 +122,7 @@ final class TripController
 
         try {
             (new TripService($app->db()))->cancel($id, $grottoId, (int)$currentUser['id'], $reason);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'cancelled', 'trip', $id);
+            $this->audit($app)->tripCancelled($grottoId, $this->userId($currentUser), $id, $reason);
             Session::flash('success', 'Trip cancelled. Participant notifications will be added in the next notification release.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to cancel trip: ' . $e->getMessage());
@@ -146,21 +144,5 @@ final class TripController
             'landowners' => (new LandownerService($app->db()))->listForGrotto($grottoId),
             'waiverTemplates' => (new WaiverTemplateService($app->db()))->listActiveForGrotto($grottoId),
         ]);
-    }
-
-    /** @return array<string, mixed> */
-    private function requireMember(Application $app): array
-    {
-        return (new AuthService($app->db()))->requireRole(['super_admin', 'grotto_admin', 'member']);
-    }
-
-    /** @param array<string, mixed> $user */
-    private function grottoId(array $user): int
-    {
-        $grottoId = (int)($user['grotto_id'] ?? 0);
-        if ($grottoId <= 0) {
-            throw new \RuntimeException('A grotto-scoped account is required.');
-        }
-        return $grottoId;
     }
 }

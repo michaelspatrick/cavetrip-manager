@@ -13,7 +13,58 @@ final class AuditLogService
     {
     }
 
-    public function record(
+    public function tripCreated(int $grottoId, int $userId, int $tripId): void
+    {
+        $this->record('trip.created', 'Trip created.', $grottoId, $userId, 'trip', $tripId);
+    }
+
+    public function tripUpdated(int $grottoId, int $userId, int $tripId): void
+    {
+        $this->record('trip.updated', 'Trip updated.', $grottoId, $userId, 'trip', $tripId);
+    }
+
+    public function tripCancelled(int $grottoId, int $userId, int $tripId, string $reason = ''): void
+    {
+        $this->record('trip.cancelled', 'Trip cancelled.', $grottoId, $userId, 'trip', $tripId, [
+            'reason' => $reason,
+        ]);
+    }
+
+    public function participantAdded(int $grottoId, int $userId, int $tripId, int $participantId): void
+    {
+        $this->record('trip_participant.added', 'Participant added to trip.', $grottoId, $userId, 'trip_participant', $participantId, [
+            'trip_id' => $tripId,
+        ]);
+    }
+
+    public function participantRemoved(int $grottoId, int $userId, int $tripId, int $participantId): void
+    {
+        $this->record('trip_participant.removed', 'Participant removed from trip.', $grottoId, $userId, 'trip_participant', $participantId, [
+            'trip_id' => $tripId,
+        ]);
+    }
+
+    public function waiverTemplateCreated(int $grottoId, int $userId, int $templateId): void
+    {
+        $this->record('waiver_template.created', 'Waiver template created.', $grottoId, $userId, 'waiver_template', $templateId);
+    }
+
+    public function waiverTemplateUpdated(int $grottoId, int $userId, int $templateId): void
+    {
+        $this->record('waiver_template.updated', 'Waiver template updated.', $grottoId, $userId, 'waiver_template', $templateId);
+    }
+
+    public function userLoggedIn(int $grottoId, int $userId): void
+    {
+        $this->record('auth.login', 'User logged in.', $grottoId, $userId, 'user', $userId);
+    }
+
+    public function userLoggedOut(int $grottoId, int $userId): void
+    {
+        $this->record('auth.logout', 'User logged out.', $grottoId, $userId, 'user', $userId);
+    }
+
+    private function record(
         string $eventType,
         string $message,
         ?int $grottoId = null,
@@ -22,9 +73,7 @@ final class AuditLogService
         ?int $entityId = null,
         array $metadata = []
     ): void {
-        $pdo = $this->app->db();
-
-        $stmt = $pdo->prepare("
+        $stmt = $this->app->db()->prepare("
             INSERT INTO audit_logs (
                 grotto_id,
                 user_id,

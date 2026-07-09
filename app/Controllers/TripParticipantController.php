@@ -8,12 +8,10 @@ use CaveTrip\Core\Application;
 use CaveTrip\Core\Http;
 use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
-use CaveTrip\Services\AuditLogService;
-use CaveTrip\Services\AuthService;
 use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\TripService;
 
-final class TripParticipantController
+final class TripParticipantController extends BaseController
 {
     public function add(Application $app): string
     {
@@ -30,7 +28,7 @@ final class TripParticipantController
 
         try {
             $participantId = (new TripParticipantService($app->db()))->addParticipant($trip, $_POST, null);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'added_participant', 'trip_participant', $participantId);
+            $this->audit($app)->participantAdded($grottoId, $this->userId($currentUser), $tripId, $participantId);
             Session::flash('success', 'Participant added.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to add participant: ' . $e->getMessage());
@@ -54,7 +52,7 @@ final class TripParticipantController
         }
 
         (new TripParticipantService($app->db()))->removeParticipant($participantId, $tripId);
-        (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'removed_participant', 'trip_participant', $participantId);
+        $this->audit($app)->participantRemoved($grottoId, $this->userId($currentUser), $tripId, $participantId);
         Session::flash('success', 'Participant removed from active roster.');
         return Http::redirect('/trips/show?id=' . $tripId);
     }
@@ -93,11 +91,5 @@ final class TripParticipantController
         }
 
         return Http::redirect('/trip/signup?token=' . urlencode($token));
-    }
-
-    /** @return array<string, mixed> */
-    private function requireMember(Application $app): array
-    {
-        return (new AuthService($app->db()))->requireRole(['super_admin', 'grotto_admin', 'member']);
     }
 }

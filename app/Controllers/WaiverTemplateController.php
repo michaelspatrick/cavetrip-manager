@@ -8,11 +8,9 @@ use CaveTrip\Core\Application;
 use CaveTrip\Core\Http;
 use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
-use CaveTrip\Services\AuditLogService;
-use CaveTrip\Services\AuthService;
 use CaveTrip\Services\WaiverTemplateService;
 
-final class WaiverTemplateController
+final class WaiverTemplateController extends BaseController
 {
     public function index(Application $app): string
     {
@@ -40,7 +38,7 @@ final class WaiverTemplateController
 
         try {
             $id = (new WaiverTemplateService($app->db()))->create($grottoId, $_POST);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'created', 'waiver_template', $id);
+            $this->audit($app)->waiverTemplateCreated($grottoId, $this->userId($currentUser), $id);
             Session::flash('success', 'Waiver template created.');
             return Http::redirect('/waiver-templates/edit?id=' . $id);
         } catch (\Throwable $e) {
@@ -73,7 +71,7 @@ final class WaiverTemplateController
 
         try {
             (new WaiverTemplateService($app->db()))->update($id, $grottoId, $_POST);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'updated', 'waiver_template', $id);
+            $this->audit($app)->waiverTemplateUpdated($grottoId, $this->userId($currentUser), $id);
             Session::flash('success', 'Waiver template updated.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to update waiver template: ' . $e->getMessage());
@@ -115,21 +113,5 @@ final class WaiverTemplateController
             '{{PARTICIPANT_LIST}}',
             '{{SIGNATURE_BLOCKS}}',
         ];
-    }
-
-    /** @return array<string, mixed> */
-    private function requireAdmin(Application $app): array
-    {
-        return (new AuthService($app->db()))->requireRole(['super_admin', 'grotto_admin']);
-    }
-
-    /** @param array<string, mixed> $user */
-    private function grottoId(array $user): int
-    {
-        $grottoId = (int)($user['grotto_id'] ?? 0);
-        if ($grottoId <= 0) {
-            throw new \RuntimeException('A grotto-scoped account is required.');
-        }
-        return $grottoId;
     }
 }
