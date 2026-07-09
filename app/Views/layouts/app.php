@@ -1,73 +1,70 @@
 <?php
-use CaveTrip\Core\Csrf;
-use CaveTrip\Core\Session;
-use CaveTrip\Core\View;
-use CaveTrip\Services\AuthService;
 
-$title = $title ?? 'CaveTrip Manager';
-$currentUserForLayout = null;
-try {
-    if (isset($app)) {
-        $currentUserForLayout = (new AuthService($app->db()))->user();
-    }
-} catch (Throwable $e) {
-    $currentUserForLayout = null;
-}
-$success = Session::flash('success');
-$error = Session::flash('error');
+use CaveTrip\Core\Csrf;
+
+$version = require $app->rootPath('config/version.php');
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+
+$isActive = static function (string $path) use ($currentPath): string {
+    return str_starts_with($currentPath, $path) ? 'active' : '';
+};
 ?>
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= View::e($title) ?></title>
+    <title><?= htmlspecialchars($title ?? $version['name']) ?></title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
-<header class="site-header">
-    <div class="container header-inner">
-        <div class="brand">
-            <strong>CaveTrip Manager</strong>
-            <span class="tagline">Plan. Explore. Return Safely.</span>
+<div class="ctm-shell">
+    <aside class="ctm-sidebar">
+        <div class="ctm-brand">
+            <div class="ctm-brand-title">CaveTrip Manager</div>
+            <div class="ctm-brand-tagline">Plan. Explore. Return Safely.</div>
         </div>
-        <nav>
-            <a href="/">Home</a>
-            <?php if ($currentUserForLayout): ?>
-                <a href="/dashboard">Dashboard</a>
-                <a href="/trips">Trips</a>
-                <?php if (in_array($currentUserForLayout['role'], ['super_admin', 'grotto_admin'], true)): ?>
-                    <a href="/admin/grotto/settings">Grotto Settings</a>
-                    <a href="/users">Users</a>
-                    <a href="/waiver-templates">Waivers</a>
-                    <a href="/landowners">Landowners</a>
-                    <a href="/caves">Caves</a>
-                <?php endif; ?>
-                <form method="post" action="/logout" class="inline-form">
-                    <?= Csrf::field() ?>
-                    <button type="submit" class="link-button">Logout</button>
-                </form>
-            <?php else: ?>
-                <a href="/login">Login</a>
-            <?php endif; ?>
-            <a href="/audit-logs">Audit Log</a>
+
+        <nav class="ctm-nav">
+            <a class="<?= $isActive('/dashboard') ?>" href="/dashboard">Dashboard</a>
+            <a class="<?= $isActive('/trips') ?>" href="/trips">Trips</a>
+            <a class="<?= $isActive('/waiver-templates') ?>" href="/waiver-templates">Waiver Templates</a>
+            <a class="<?= $isActive('/landowners') ?>" href="/landowners">Landowners</a>
+            <a class="<?= $isActive('/caves') ?>" href="/caves">Caves</a>
+            <a class="<?= $isActive('/users') ?>" href="/users">Users</a>
+            <a class="<?= $isActive('/audit-logs') ?>" href="/audit-logs">Audit Log</a>
+            <a class="<?= $isActive('/admin/grotto/settings') ?>" href="/admin/grotto/settings">Grotto Settings</a>
+            <a class="<?= $isActive('/about') ?>" href="/about">About</a>
             <a href="/health">Health</a>
         </nav>
-    </div>
-</header>
-<main class="container main-content">
-    <?php if ($success): ?><div class="alert success"><?= e($success) ?></div><?php endif; ?>
-    <?php if ($error): ?><div class="alert error"><?= e($error) ?></div><?php endif; ?>
-    <?= $content ?>
-</main>
-<?php $version = require $app->rootPath('config/version.php'); ?>
+    </aside>
 
-<footer class="app-footer">
-    <div class="container">
-        CaveTrip Manager
-        v<?= htmlspecialchars($version['version']) ?>
-        · Build <?= htmlspecialchars($version['build']) ?>
+    <div class="ctm-main">
+        <header class="ctm-topbar">
+            <div>
+                <div class="ctm-page-title"><?= htmlspecialchars($title ?? 'Dashboard') ?></div>
+            </div>
+
+            <form method="post" action="/logout" class="m-0">
+                <?= Csrf::field() ?>
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+            </form>
+        </header>
+
+        <main class="ctm-content">
+            <?= $content ?? '' ?>
+        </main>
+
+        <footer class="ctm-footer">
+            <?= htmlspecialchars($version['name']) ?>
+            v<?= htmlspecialchars($version['version']) ?>
+            · Build <?= htmlspecialchars($version['build']) ?>
+        </footer>
     </div>
-</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
