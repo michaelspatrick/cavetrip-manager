@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CaveTrip\Controllers\AuditLogController;
 use CaveTrip\Controllers\AuthController;
 use CaveTrip\Controllers\CaveController;
 use CaveTrip\Controllers\DashboardController;

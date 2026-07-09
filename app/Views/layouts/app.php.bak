@@ -50,7 +50,6 @@ $error = Session::flash('error');
             <?php else: ?>
                 <a href="/login">Login</a>
             <?php endif; ?>
-            <a href="/audit-logs">Audit Log</a>
             <a href="/health">Health</a>
         </nav>
     </div>
