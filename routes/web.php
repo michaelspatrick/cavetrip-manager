@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use CaveTrip\Controllers\AuditLogController;
+use CaveTrip\Controllers\AuditLogController;
 use CaveTrip\Controllers\AuthController;
 use CaveTrip\Controllers\CaveController;
 use CaveTrip\Controllers\DashboardController;
@@ -30,6 +31,7 @@ $router->post('/login', [new AuthController(), 'login']);
 $router->post('/logout', [new AuthController(), 'logout']);
 
 $router->get('/dashboard', [new DashboardController(), 'index']);
+$router->get('/audit-logs', [new AuditLogController(), 'index']);
 
 $router->get('/admin/grotto/settings', [new GrottoSettingsController(), 'edit']);
 $router->post('/admin/grotto/settings', [new GrottoSettingsController(), 'update']);
