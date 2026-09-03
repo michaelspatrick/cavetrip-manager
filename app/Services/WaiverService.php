@@ -109,7 +109,7 @@ final class WaiverService
             '{{GROTTO_NAME}}' => $this->e((string)($trip['grotto_name'] ?? '')),
             '{{LANDOWNER_NAME}}' => $this->e((string)($trip['landowner_name'] ?? '')),
             '{{CAVE_NAME}}' => $this->e((string)($trip['cave_name'] ?? '')),
-            '{{CAVE_DESCRIPTION}}' => nl2br($this->e((string)($trip['cave_description'] ?? ''))),
+            '{{CAVE_DESCRIPTION}}' => $this->caveDescription($trip),
             '{{TRIP_TITLE}}' => $this->e((string)$trip['title']),
             '{{TRIP_DATE}}' => $this->e((string)$trip['trip_date']),
             '{{FINALIZED_DATE}}' => date('F j, Y'),
@@ -120,6 +120,19 @@ final class WaiverService
 
         $body = strtr((string)$template['html_body'], $replacements);
         return '<article class="final-waiver"><h1>' . $this->e((string)$template['name']) . '</h1>' . $body . '</article>';
+    }
+
+    /** @param array<string,mixed> $trip */
+    private function caveDescription(array $trip): string
+    {
+        $parts = [];
+        $name = trim((string)($trip['cave_name'] ?? ''));
+        $county = trim((string)($trip['cave_county'] ?? ''));
+        $state = trim((string)($trip['cave_state'] ?? ''));
+        if ($name !== '') { $parts[] = $name; }
+        $area = trim(implode(', ', array_filter([$county !== '' ? $county . ' County' : '', $state])));
+        if ($area !== '') { $parts[] = $area; }
+        return $this->e(implode(' — ', $parts));
     }
 
     private function e(string $value): string

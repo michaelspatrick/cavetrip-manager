@@ -11,12 +11,12 @@ $datetimeValue = static function (?string $value): string {
 <div class="page-header">
     <div>
         <h1><?= View::e($title) ?></h1>
-        <p class="text-muted">Create or update trip details, capacity, signup rules, callout time, and waiver settings.</p>
+        <p>Plan the trip, attendee limits, waiver, and emergency callout details.</p>
     </div>
     <a class="button secondary" href="/trips">Back to Trips</a>
 </div>
 
-<form method="post" action="<?= View::e($action) ?>" class="card form-stack">
+<form method="post" action="<?= View::e($action) ?>" class="card form-grid">
     <?= Csrf::field() ?>
 
     <label>
@@ -76,10 +76,11 @@ $datetimeValue = static function (?string $value): string {
     <label>
         Visibility
         <select name="visibility">
-            <?php foreach (['core_group' => 'Core Group', 'selected_members' => 'Selected Members', 'invite_link' => 'Invite Link', 'private' => 'Private'] as $value => $label): ?>
+            <?php foreach (['core_group' => 'Members', 'selected_members' => 'Selected Users', 'invite_link' => 'Invite Link', 'private' => 'Private'] as $value => $label): ?>
                 <option value="<?= $value ?>" <?= (($trip['visibility'] ?? 'core_group') === $value) ? 'selected' : '' ?>><?= View::e($label) ?></option>
             <?php endforeach; ?>
         </select>
+        <small class="text-muted">Members: visible to grotto members. Selected Users: only the leader, admins, and people explicitly added to the trip. Invite Link: hidden from trip lists and accessible through its signup link. Private: only the leader and admins can see it until participants are explicitly added.</small>
     </label>
 
     <label>
@@ -103,32 +104,44 @@ $datetimeValue = static function (?string $value): string {
     </label>
 
     <label>
-        Callout Time
-        <input type="datetime-local" name="callout_time" value="<?= View::e($datetimeValue($trip['callout_time'] ?? null)) ?>">
+        Callout Date / Time
+        <input type="datetime-local" name="callout_time" required value="<?= View::e($datetimeValue($trip['callout_time'] ?? null)) ?>">
     </label>
+
+
+    <fieldset class="form-section">
+        <legend>Callout Contacts</legend>
+        <p class="text-muted">Specify at least one person who should expect the trip to be out by the callout time.</p>
+        <?php
+        $calloutRows = $calloutContacts ?? [];
+        while (count($calloutRows) < 3) { $calloutRows[] = ['name'=>'','email'=>'','phone'=>'']; }
+        foreach ($calloutRows as $contact):
+        ?>
+        <div class="callout-contact-row">
+            <label>Name<input type="text" name="callout_contact_name[]" value="<?= View::e((string)($contact['name'] ?? '')) ?>"></label>
+            <label>Email<input type="email" name="callout_contact_email[]" value="<?= View::e((string)($contact['email'] ?? '')) ?>"></label>
+            <label>Phone<input type="text" name="callout_contact_phone[]" value="<?= View::e((string)($contact['phone'] ?? '')) ?>"></label>
+        </div>
+        <?php endforeach; ?>
+    </fieldset>
 
     <label class="checkbox-row">
         <input type="checkbox" name="waitlist_enabled" value="1" <?= ((int)($trip['waitlist_enabled'] ?? 1) === 1) ? 'checked' : '' ?>>
         Enable waitlist when max attendees is reached
     </label>
 
-    <label>
+    <label class="full-width">
         Meeting Location / Public Instructions
-        <textarea name="meeting_location" rows="4"><?= View::e($trip['meeting_location'] ?? '') ?></textarea>
+        <textarea name="meeting_location" rows="3"><?= View::e($trip['meeting_location'] ?? '') ?></textarea>
     </label>
 
-    <label>
-        Cave / Permission Area Description
-        <textarea name="cave_description" rows="4"><?= View::e($trip['cave_description'] ?? '') ?></textarea>
+    <label class="full-width">
+        Trip Leader / Internal Notes
+        <textarea name="notes" rows="4"><?= View::e($trip['notes'] ?? '') ?></textarea>
+        <small class="text-muted">Visible only to the trip leader and administrators. Not shown on public signup pages or waivers.</small>
     </label>
 
-    <label>
-        Leader Notes
-        <textarea name="notes" rows="5"><?= View::e($trip['notes'] ?? '') ?></textarea>
-    </label>
-
-    <div class="form-actions">
+    <div class="form-actions full-width">
         <button type="submit" class="button">Save Trip</button>
-        <a class="button secondary" href="/trips">Cancel</a>
     </div>
 </form>
