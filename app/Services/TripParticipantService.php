@@ -100,9 +100,12 @@ final class TripParticipantService
     /** @return array<string, mixed>|null */
     public function findBySignatureToken(string $token): ?array
     {
-        $stmt = $this->db->prepare('SELECT tp.*, t.title AS trip_title, t.trip_date, t.meeting_time, t.cave_description, c.name AS cave_name
+        $stmt = $this->db->prepare('SELECT tp.*, t.title AS trip_title, t.trip_date, t.meeting_time,
+            c.name AS cave_name, g.name AS grotto_name, g.logo_url AS grotto_logo_url,
+            g.logo_file_path AS grotto_logo_file_path, g.website_url AS grotto_website_url
             FROM trip_participants tp
             INNER JOIN trips t ON t.id = tp.trip_id
+            INNER JOIN grottos g ON g.id = t.grotto_id
             LEFT JOIN caves c ON c.id = t.cave_id
             WHERE tp.signature_token = :signature_token
             LIMIT 1');

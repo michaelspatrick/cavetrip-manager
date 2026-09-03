@@ -151,7 +151,9 @@ final class TripService
 
     private function baseSelect():string
     {
-        return "SELECT trips.*, grottos.name AS grotto_name, caves.name AS cave_name, caves.state AS cave_state,
+        return "SELECT trips.*, grottos.name AS grotto_name, grottos.logo_url AS grotto_logo_url,
+                grottos.logo_file_path AS grotto_logo_file_path, grottos.website_url AS grotto_website_url,
+                caves.name AS cave_name, caves.state AS cave_state,
                 caves.county AS cave_county, landowners.name AS landowner_name, users.name AS leader_name,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id=trips.id AND tp.participant_status IN ('registered','signed')) AS registered_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id=trips.id AND tp.participant_status='waitlisted') AS waitlist_count,

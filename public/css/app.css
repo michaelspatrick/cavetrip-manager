@@ -452,3 +452,244 @@ a.button.secondary:hover {
         min-height: auto;
     }
 }
+
+/* v0.17.6 public trip signup + signature experience */
+.ctm-public-body {
+    min-height: 100vh;
+    background: #eef2ef;
+}
+
+.ctm-public-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.ctm-public-header {
+    background: #fff;
+    border-bottom: 1px solid var(--ctm-border);
+    padding: 18px clamp(18px, 4vw, 40px);
+}
+
+.ctm-public-brand {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.ctm-public-brand img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 190px;
+    max-height: 86px;
+    object-fit: contain;
+}
+
+.ctm-public-brand-name {
+    color: var(--ctm-text);
+    font-size: clamp(1.15rem, 3vw, 1.6rem);
+    line-height: 1.15;
+    font-weight: 800;
+}
+
+.ctm-public-brand-tagline {
+    margin-top: 4px;
+    color: var(--ctm-muted);
+    font-size: .9rem;
+}
+
+.ctm-public-content {
+    flex: 1;
+    width: min(980px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 32px 0 48px;
+}
+
+.ctm-public-footer {
+    border-top: 1px solid var(--ctm-border);
+    background: #fff;
+    color: var(--ctm-muted);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px clamp(18px, 4vw, 40px);
+    font-size: .82rem;
+}
+
+.signup-shell {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.signup-card {
+    padding: clamp(22px, 4vw, 34px);
+}
+
+.signup-card h1 {
+    margin: 0 0 6px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -.035em;
+}
+
+.signup-card h2 {
+    margin-top: 0;
+}
+
+.trip-date-line {
+    margin: 0;
+}
+
+.signup-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 22px 0;
+}
+
+.signup-summary-item {
+    min-width: 0;
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--ctm-border);
+    border-radius: 10px;
+    background: #f7f9f7;
+}
+
+.signup-summary dt {
+    margin: 0 0 5px;
+    color: var(--ctm-muted);
+    font-size: .76rem;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.signup-summary dd {
+    margin: 0;
+    color: var(--ctm-text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.trip-instructions {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-left: 4px solid var(--ctm-green);
+    border-radius: 0 8px 8px 0;
+    background: #f4f7f4;
+}
+
+.trip-instructions-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--ctm-green-dark);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.trip-instructions p,
+.privacy-note {
+    margin: 0;
+    line-height: 1.55;
+}
+
+.privacy-note {
+    margin-top: 20px;
+    color: var(--ctm-muted);
+    font-size: .9rem;
+}
+
+.signature-pad-wrap {
+    width: 100%;
+    min-height: 220px;
+    overflow: hidden;
+    border: 2px dashed #9ca9a0;
+    border-radius: 12px;
+    background: #fff;
+}
+
+#signature-pad {
+    display: block;
+    width: 100%;
+    height: clamp(220px, 35vw, 300px);
+    background: linear-gradient(to bottom, #fff 0%, #fff 82%, #eef1ef 82%, #eef1ef 82.5%, #fff 82.5%, #fff 100%);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.signature-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.saved-signature-preview {
+    display: block;
+    width: min(100%, 420px);
+    height: auto;
+    margin-top: 16px;
+    padding: 10px;
+    border: 1px solid var(--ctm-border);
+    border-radius: 10px;
+    background: #fff;
+}
+
+@media (max-width: 700px) {
+    .ctm-public-header {
+        padding: 14px 16px;
+    }
+
+    .ctm-public-brand {
+        gap: 12px;
+    }
+
+    .ctm-public-brand img {
+        max-width: 120px;
+        max-height: 64px;
+    }
+
+    .ctm-public-brand-tagline {
+        display: none;
+    }
+
+    .ctm-public-content {
+        width: min(100% - 20px, 980px);
+        padding: 18px 0 30px;
+    }
+
+    .signup-card {
+        padding: 20px 16px;
+    }
+
+    .signup-summary {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 18px 0;
+    }
+
+    .signature-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .signature-actions .button {
+        width: 100%;
+    }
+
+    .ctm-public-footer {
+        flex-direction: column;
+        gap: 4px;
+        padding: 14px 16px;
+    }
+}

@@ -18,8 +18,14 @@ final class View
         require $viewFile;
         $content = ob_get_clean();
 
+        $publicViews = [
+            'trips/signup',
+            'signatures/sign',
+        ];
+        $layout = in_array($view, $publicViews, true) ? 'public' : 'app';
+
         ob_start();
-        require $app->rootPath('app/Views/layouts/app.php');
+        require $app->rootPath('app/Views/layouts/' . $layout . '.php');
         return (string)ob_get_clean();
     }
 
