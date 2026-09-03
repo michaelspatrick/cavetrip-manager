@@ -34,13 +34,21 @@ $datetimeValue = static function (?string $value): string {
         <input type="time" name="meeting_time" value="<?= View::e(substr((string)($trip['meeting_time'] ?? ''), 0, 5)) ?>">
     </label>
 
+    <?php $currentStatus=(string)($trip['status']??'draft'); ?>
     <label>
         Status
-        <select name="status">
-            <?php foreach (['draft','open','waiver_signing','finalized','active','completed','cancelled'] as $status): ?>
-                <option value="<?= $status ?>" <?= (($trip['status'] ?? 'draft') === $status) ? 'selected' : '' ?>><?= View::e($status) ?></option>
-            <?php endforeach; ?>
-        </select>
+        <?php if ($currentStatus === 'completed'): ?>
+            <input type="text" value="Completed (system status)" disabled>
+            <input type="hidden" name="status" value="completed">
+            <small class="help-text">Completed is maintained by the trip workflow and is not manually selected.</small>
+        <?php else: ?>
+            <select name="status">
+                <?php foreach (['draft'=>'Draft','open'=>'Open for Signup','closed'=>'Signup Closed','cancelled'=>'Cancelled'] as $status=>$statusLabel): ?>
+                    <option value="<?= $status ?>" <?= ($currentStatus === $status) ? 'selected' : '' ?>><?= View::e($statusLabel) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <small class="help-text">Waiver progress, capacity, callout status, and emergency state are tracked separately by the system.</small>
+        <?php endif; ?>
     </label>
 
     <label>

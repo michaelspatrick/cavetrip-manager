@@ -7,6 +7,7 @@ use CaveTrip\Controllers\AuditLogController;
 use CaveTrip\Controllers\AuthController;
 use CaveTrip\Controllers\CaveController;
 use CaveTrip\Controllers\DashboardController;
+use CaveTrip\Controllers\EmailSettingsController;
 use CaveTrip\Controllers\GrottoSettingsController;
 use CaveTrip\Controllers\LandownerController;
 use CaveTrip\Controllers\SignatureController;
@@ -26,6 +27,7 @@ $router->get('/',static fn(Application $app):string=>View::render($app,'pages/ho
 $router->get('/login',[new AuthController(),'showLogin']); $router->post('/login',[new AuthController(),'login']); $router->post('/logout',[new AuthController(),'logout']);
 $router->get('/dashboard',[new DashboardController(),'index']);
 $router->get('/admin/grotto/settings',[new GrottoSettingsController(),'edit']); $router->post('/admin/grotto/settings',[new GrottoSettingsController(),'update']);
+$router->get('/admin/email/settings',[new EmailSettingsController(),'edit']); $router->post('/admin/email/settings',[new EmailSettingsController(),'update']); $router->post('/admin/email/settings/test',[new EmailSettingsController(),'test']);
 $router->get('/users',[new UserController(),'index']); $router->get('/users/create',[new UserController(),'create']); $router->post('/users',[new UserController(),'store']); $router->get('/users/edit',[new UserController(),'edit']); $router->post('/users/update',[new UserController(),'update']);
 $router->get('/waiver-templates',[new WaiverTemplateController(),'index']); $router->get('/waiver-templates/create',[new WaiverTemplateController(),'create']); $router->post('/waiver-templates',[new WaiverTemplateController(),'store']); $router->get('/waiver-templates/edit',[new WaiverTemplateController(),'edit']); $router->post('/waiver-templates/update',[new WaiverTemplateController(),'update']);
 $router->get('/trips',[new TripController(),'index']); $router->get('/trips/create',[new TripController(),'create']); $router->post('/trips',[new TripController(),'store']); $router->get('/trips/show',[new TripController(),'show']); $router->get('/trips/edit',[new TripController(),'edit']); $router->post('/trips/update',[new TripController(),'update']); $router->post('/trips/cancel',[new TripController(),'cancel']);

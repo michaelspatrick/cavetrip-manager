@@ -179,7 +179,7 @@ final class TripService
         $min=$this->nullableInt($data['min_attendees']??null); $max=$this->nullableInt($data['max_attendees']??null);
         if($min!==null&&$max!==null&&$min>$max) throw new \InvalidArgumentException('Minimum attendees cannot be greater than maximum attendees.');
         $visibility=(string)($data['visibility']??'core_group'); if(!in_array($visibility,['core_group','selected_members','invite_link','private'],true)) $visibility='core_group';
-        $status=(string)($data['status']??'draft'); if(!in_array($status,['draft','open','waiver_signing','finalized','active','completed','cancelled'],true)) $status='draft';
+        $status=(string)($data['status']??'draft'); if(!in_array($status,['draft','open','closed','completed','cancelled'],true)) $status='draft';
         return ['grotto_id'=>$grottoId,'trip_number'=>$tripNumber,'title'=>$this->requiredString($data['title']??'','Trip title is required.'),
             'trip_date'=>$this->requiredDate($data['trip_date']??'','Trip date is required.'),'meeting_time'=>$this->nullableTime($data['meeting_time']??null),
             'meeting_location'=>$this->nullableString($data['meeting_location']??null),'cave_id'=>$this->nullableInt($data['cave_id']??null),

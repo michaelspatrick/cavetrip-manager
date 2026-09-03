@@ -714,3 +714,9 @@ a.button.secondary:hover {
     .signature-actions .button { width: 100%; }
     .signup-submit-card .button { width: 100%; }
 }
+
+/* v0.17.8 */
+.status-badge{display:inline-flex;align-items:center;border-radius:999px;padding:.28rem .65rem;font-size:.78rem;font-weight:800;line-height:1.2;white-space:nowrap;border:1px solid transparent}
+.status-draft{background:#eef0f2;color:#4d5660;border-color:#d7dce0}.status-open{background:#e4f3e8;color:#245a34;border-color:#c4dfcb}.status-closed{background:#fff3cd;color:#735c0f;border-color:#ead995}.status-completed{background:#e1efff;color:#245078;border-color:#c6dcf3}.status-cancelled{background:#f8d7da;color:#842029;border-color:#efbfc3}
+.signup-link{display:inline-block;margin-top:.28rem;font-size:.82rem;font-weight:700}.help-text{display:block;color:var(--ctm-muted);font-weight:400;margin-top:.4rem;font-size:.84rem}.provider-box{border:1px solid var(--ctm-border);border-radius:var(--ctm-radius);padding:20px;background:#fafcfb}.provider-box h3{margin-top:0}.email-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:none}.muted{color:var(--ctm-muted)}
+@media(max-width:800px){.email-grid{grid-template-columns:1fr}}
