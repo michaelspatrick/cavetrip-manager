@@ -40,6 +40,10 @@ final class UserService
 
     public function createUser(?int $grottoId, string $role, string $name, string $email, ?string $phone, ?string $password): int
     {
+        if ($role !== 'super_admin' && ($grottoId === null || $grottoId <= 0)) {
+            throw new \InvalidArgumentException('A grotto is required for Admin, Member, and Guest accounts.');
+        }
+
         $stmt = $this->db->prepare('INSERT INTO users (grotto_id, role, name, email, phone, password_hash, active, created_at) VALUES (:grotto_id, :role, :name, :email, :phone, :password_hash, 1, NOW())');
         $stmt->execute([
             'grotto_id' => $grottoId,
@@ -53,11 +57,20 @@ final class UserService
     }
 
     /** @param array<string, mixed> $data */
-    public function updateUser(int $id, ?int $grottoId, array $data): void
+    public function updateUser(int $id, ?int $scopeGrottoId, array $data, bool $mayChangeGrotto = false): void
     {
         $role = (string)($data['role'] ?? 'guest');
         if (!in_array($role, ['super_admin', 'admin', 'member', 'guest'], true)) {
             throw new \InvalidArgumentException('Invalid role.');
+        }
+
+        $assignedGrottoId = null;
+        if ($mayChangeGrotto) {
+            $rawGrotto = trim((string)($data['grotto_id'] ?? ''));
+            $assignedGrottoId = $rawGrotto === '' ? null : (int)$rawGrotto;
+            if ($role !== 'super_admin' && ($assignedGrottoId === null || $assignedGrottoId <= 0)) {
+                throw new \InvalidArgumentException('A grotto is required for Admin, Member, and Guest accounts.');
+            }
         }
 
         $params = [
@@ -70,13 +83,23 @@ final class UserService
         ];
 
         $where = 'id = :id';
-        if ($grottoId !== null) {
-            $where .= ' AND grotto_id = :grotto_id';
-            $params['grotto_id'] = $grottoId;
+        if ($scopeGrottoId !== null) {
+            $where .= ' AND grotto_id = :scope_grotto_id';
+            $params['scope_grotto_id'] = $scopeGrottoId;
         }
 
-        $stmt = $this->db->prepare("UPDATE users SET name = :name, email = :email, phone = :phone, role = :role, active = :active, updated_at = NOW() WHERE {$where}");
+        $set = 'name = :name, email = :email, phone = :phone, role = :role, active = :active, updated_at = NOW()';
+        if ($mayChangeGrotto) {
+            $set = 'grotto_id = :assigned_grotto_id, ' . $set;
+            $params['assigned_grotto_id'] = $assignedGrottoId;
+        }
+
+        $stmt = $this->db->prepare("UPDATE users SET {$set} WHERE {$where}");
         $stmt->execute($params);
+
+        if ($stmt->rowCount() === 0 && $this->find($id, $scopeGrottoId) === null) {
+            throw new \RuntimeException('User not found.');
+        }
 
         $newPassword = (string)($data['password'] ?? '');
         if ($newPassword !== '') {
@@ -85,9 +108,9 @@ final class UserService
             }
             $passwordParams = ['id' => $id, 'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT)];
             $passwordWhere = 'id = :id';
-            if ($grottoId !== null) {
-                $passwordWhere .= ' AND grotto_id = :grotto_id';
-                $passwordParams['grotto_id'] = $grottoId;
+            if ($scopeGrottoId !== null) {
+                $passwordWhere .= ' AND grotto_id = :scope_grotto_id';
+                $passwordParams['scope_grotto_id'] = $scopeGrottoId;
             }
             $passwordStmt = $this->db->prepare("UPDATE users SET password_hash = :password_hash, updated_at = NOW() WHERE {$passwordWhere}");
             $passwordStmt->execute($passwordParams);

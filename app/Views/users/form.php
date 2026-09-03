@@ -4,6 +4,7 @@ use CaveTrip\Core\View;
 $isEdit = is_array($user);
 $value = static fn(string $key): string => View::e((string)($user[$key] ?? ''));
 $role = (string)($user['role'] ?? 'guest');
+$selectedGrottoId = (string)($user['grotto_id'] ?? '');
 ?>
 <div class="page-header">
 <div><h1><?= $isEdit ? 'Edit User' : 'Create User' ?></h1><p>New accounts default to Guest until an administrator promotes them.</p></div>
@@ -12,7 +13,17 @@ $role = (string)($user['role'] ?? 'guest');
 <form method="post" action="<?= View::e($action) ?>" class="panel form-stack">
 <?= Csrf::field() ?>
 <?php if ((string)$currentUser['role'] === 'super_admin'): ?>
-<label>Grotto ID<input type="number" name="grotto_id" min="1" value="<?= $value('grotto_id') ?>"></label>
+<label>Grotto
+<select name="grotto_id">
+    <option value="" <?= $selectedGrottoId === '' ? 'selected' : '' ?>>No grotto (Super Admin only)</option>
+    <?php foreach ($grottos as $grotto): ?>
+        <option value="<?= (int)$grotto['id'] ?>" <?= $selectedGrottoId === (string)$grotto['id'] ? 'selected' : '' ?>>
+            <?= View::e((string)$grotto['name']) ?><?= (int)($grotto['active'] ?? 1) === 1 ? '' : ' (Inactive)' ?>
+        </option>
+    <?php endforeach; ?>
+</select>
+<small class="text-muted">Admin, Member, and Guest accounts must belong to a grotto. Installation-level Super Admin accounts may be unassigned.</small>
+</label>
 <?php endif; ?>
 <label>Name<input type="text" name="name" required value="<?= $value('name') ?>"></label>
 <label>Email<input type="email" name="email" required value="<?= $value('email') ?>"></label>

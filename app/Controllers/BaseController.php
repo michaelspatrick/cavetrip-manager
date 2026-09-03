@@ -21,26 +21,30 @@ abstract class BaseController
     }
 
     /** @return array<string, mixed> */
+    protected function requireLogin(Application $app): array
+    {
+        return $this->auth($app)->requireLogin();
+    }
+
+    /** @return array<string, mixed> */
     protected function requireMember(Application $app): array
     {
-        return $this->auth($app)->requireRole(['super_admin', 'grotto_admin', 'member']);
+        return $this->auth($app)->requireRole(['super_admin', 'admin', 'member']);
     }
 
     /** @return array<string, mixed> */
     protected function requireAdmin(Application $app): array
     {
-        return $this->auth($app)->requireRole(['super_admin', 'grotto_admin']);
+        return $this->auth($app)->requireRole(['super_admin', 'admin']);
     }
 
     /** @param array<string, mixed> $user */
     protected function grottoId(array $user): int
     {
         $grottoId = (int)($user['grotto_id'] ?? 0);
-
         if ($grottoId <= 0) {
             throw new \RuntimeException('A grotto-scoped account is required.');
         }
-
         return $grottoId;
     }
 

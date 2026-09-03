@@ -38,6 +38,19 @@ final class GrottoService
         return $this->db->query('SELECT * FROM grottos WHERE active = 1 ORDER BY name')->fetchAll();
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public function listAll(): array
+    {
+        return $this->db->query('SELECT * FROM grottos ORDER BY name')->fetchAll();
+    }
+
+    public function exists(int $id): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM grottos WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        return (bool)$stmt->fetchColumn();
+    }
+
     public function create(string $name, string $slug): int
     {
         $stmt = $this->db->prepare('INSERT INTO grottos (name, slug, active) VALUES (:name, :slug, 1)');
