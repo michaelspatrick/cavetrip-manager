@@ -24,6 +24,11 @@ final class AuthService
             return null;
         }
 
+        $loginStmt = $this->db->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id');
+        $loginStmt->execute(['id' => (int)$user['id']]);
+
+        $user['last_login_at'] = date('Y-m-d H:i:s');
+
         Session::regenerate();
         Session::put('user_id', (int)$user['id']);
         return $user;
