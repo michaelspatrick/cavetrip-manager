@@ -59,6 +59,40 @@ final class WaiverService
         return $waiverId;
     }
 
+    /** @param array<string,mixed> $trip @return array{name:string,html:string}|null */
+    public function renderForSignup(array $trip): ?array
+    {
+        $templateId = (int)($trip['waiver_template_id'] ?? 0);
+        if ($templateId <= 0) {
+            return null;
+        }
+
+        $stmt = $this->db->prepare('SELECT * FROM waiver_templates WHERE id = :id AND grotto_id = :grotto_id AND active = 1 LIMIT 1');
+        $stmt->execute(['id' => $templateId, 'grotto_id' => (int)$trip['grotto_id']]);
+        $template = $stmt->fetch();
+        if (!$template) {
+            throw new \InvalidArgumentException('The waiver selected for this trip is unavailable. Please contact the trip leader.');
+        }
+
+        $replacements = [
+            '{{GROTTO_NAME}}' => $this->e((string)($trip['grotto_name'] ?? '')),
+            '{{LANDOWNER_NAME}}' => $this->e((string)($trip['landowner_name'] ?? '')),
+            '{{CAVE_NAME}}' => $this->e((string)($trip['cave_name'] ?? '')),
+            '{{CAVE_DESCRIPTION}}' => $this->caveDescription($trip),
+            '{{TRIP_TITLE}}' => $this->e((string)($trip['title'] ?? '')),
+            '{{TRIP_DATE}}' => $this->e((string)($trip['trip_date'] ?? '')),
+            '{{FINALIZED_DATE}}' => '',
+            '{{PARTICIPANT_LIST}}' => '',
+            '{{PARTICIPANT_SIGNATURE_BLOCKS}}' => '',
+            '{{SIGNATURE_BLOCKS}}' => '',
+        ];
+
+        return [
+            'name' => (string)$template['name'],
+            'html' => strtr((string)$template['html_body'], $replacements),
+        ];
+    }
+
     /** @return array<string, mixed>|null */
     public function latestForTrip(int $tripId): ?array
     {

@@ -8,8 +8,10 @@ use CaveTrip\Core\Application;
 use CaveTrip\Core\Http;
 use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
+use CaveTrip\Services\AuditLogService;
 use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\TripService;
+use CaveTrip\Services\WaiverService;
 
 final class TripParticipantController extends BaseController
 {
@@ -17,7 +19,7 @@ final class TripParticipantController extends BaseController
     {
         Http::requirePostCsrf();
         $currentUser = $this->requireMember($app);
-        $grottoId = (int)$currentUser['grotto_id'];
+        $grottoId = $this->grottoId($currentUser);
         $tripId = (int)($_GET['trip_id'] ?? 0);
         $trip = (new TripService($app->db()))->findForGrotto($tripId, $grottoId);
 
@@ -28,8 +30,8 @@ final class TripParticipantController extends BaseController
 
         try {
             $participantId = (new TripParticipantService($app->db()))->addParticipant($trip, $_POST, null);
-            $this->audit($app)->participantAdded($grottoId, $this->userId($currentUser), $tripId, $participantId);
-            Session::flash('success', 'Participant added.');
+            (new AuditLogService($app))->participantAdded($grottoId, (int)$currentUser['id'], $tripId, $participantId);
+            Session::flash('success', 'Participant added. They must complete the waiver signature before the waiver can be finalized.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to add participant: ' . $e->getMessage());
         }
@@ -41,7 +43,7 @@ final class TripParticipantController extends BaseController
     {
         Http::requirePostCsrf();
         $currentUser = $this->requireMember($app);
-        $grottoId = (int)$currentUser['grotto_id'];
+        $grottoId = $this->grottoId($currentUser);
         $tripId = (int)($_GET['trip_id'] ?? 0);
         $participantId = (int)($_POST['participant_id'] ?? 0);
         $trip = (new TripService($app->db()))->findForGrotto($tripId, $grottoId);
@@ -52,7 +54,7 @@ final class TripParticipantController extends BaseController
         }
 
         (new TripParticipantService($app->db()))->removeParticipant($participantId, $tripId);
-        $this->audit($app)->participantRemoved($grottoId, $this->userId($currentUser), $tripId, $participantId);
+        (new AuditLogService($app))->participantRemoved($grottoId, (int)$currentUser['id'], $tripId, $participantId);
         Session::flash('success', 'Participant removed from active roster.');
         return Http::redirect('/trips/show?id=' . $tripId);
     }
@@ -66,10 +68,18 @@ final class TripParticipantController extends BaseController
             return View::render($app, 'pages/404', ['title' => 'Trip Not Found']);
         }
 
+        try {
+            $waiver = (new WaiverService($app->db()))->renderForSignup($trip);
+        } catch (\Throwable $e) {
+            $waiver = null;
+            Session::flash('error', $e->getMessage());
+        }
+
         return View::render($app, 'trips/signup', [
             'title' => 'Join Trip',
             'trip' => $trip,
             'token' => $token,
+            'waiver' => $waiver,
         ]);
     }
 
@@ -83,11 +93,42 @@ final class TripParticipantController extends BaseController
             return View::render($app, 'pages/404', ['title' => 'Trip Not Found']);
         }
 
+        $participantService = new TripParticipantService($app->db());
+        $requiresWaiver = (int)($trip['waiver_template_id'] ?? 0) > 0;
+
         try {
-            (new TripParticipantService($app->db()))->addParticipant($trip, $_POST, null);
-            Session::flash('success', 'You are signed up for this trip. Watch your email for future waiver/signature updates.');
+            if ($requiresWaiver) {
+                // Confirm the configured template is still active before accepting a signature.
+                (new WaiverService($app->db()))->renderForSignup($trip);
+                if (!isset($_POST['waiver_acknowledged'])) {
+                    throw new \InvalidArgumentException('Please confirm that you have read and agree to the waiver.');
+                }
+                $signatureData = (string)($_POST['signature_data'] ?? '');
+                if (!str_starts_with($signatureData, 'data:image/png;base64,')) {
+                    throw new \InvalidArgumentException('Please sign the waiver before completing registration.');
+                }
+            }
+
+            $app->db()->beginTransaction();
+            $participantId = $participantService->addParticipant($trip, $_POST, null);
+            if ($requiresWaiver) {
+                $participantService->saveSignatureForParticipant(
+                    $participantId,
+                    (string)$_POST['signature_data'],
+                    $_SERVER['REMOTE_ADDR'] ?? null,
+                    $_SERVER['HTTP_USER_AGENT'] ?? null
+                );
+            }
+            $app->db()->commit();
+
+            Session::flash('success', $requiresWaiver
+                ? 'Registration complete. Your trip signup and waiver signature have been saved.'
+                : 'Registration complete. You are signed up for this trip.');
         } catch (\Throwable $e) {
-            Session::flash('error', 'Unable to sign up: ' . $e->getMessage());
+            if ($app->db()->inTransaction()) {
+                $app->db()->rollBack();
+            }
+            Session::flash('error', 'Unable to complete registration: ' . $e->getMessage());
         }
 
         return Http::redirect('/trip/signup?token=' . urlencode($token));

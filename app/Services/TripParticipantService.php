@@ -48,17 +48,18 @@ final class TripParticipantService
         if ($isMinor === 1 && trim((string)($data['guardian_name'] ?? '')) === '') {
             throw new \InvalidArgumentException('Guardian name is required for minors.');
         }
+        if ($isMinor === 1 && trim((string)($data['guardian_email'] ?? '')) === '') {
+            throw new \InvalidArgumentException('Guardian email is required for minors.');
+        }
 
         $stmt = $this->db->prepare('INSERT INTO trip_participants
             (trip_id, user_id, name, email, phone, participant_status, signature_token,
              emergency_contact_name, emergency_contact_phone, emergency_contact_relationship,
-             medical_notes, allergies, medications, conditions, physical_limitations,
-             is_minor, guardian_name, guardian_email, created_at)
+             medical_notes, is_minor, guardian_name, guardian_email, created_at)
             VALUES
             (:trip_id, :user_id, :name, :email, :phone, :participant_status, :signature_token,
              :emergency_contact_name, :emergency_contact_phone, :emergency_contact_relationship,
-             :medical_notes, :allergies, :medications, :conditions, :physical_limitations,
-             :is_minor, :guardian_name, :guardian_email, NOW())');
+             :medical_notes, :is_minor, :guardian_name, :guardian_email, NOW())');
         $stmt->execute([
             'trip_id' => $tripId,
             'user_id' => $userId,
@@ -71,10 +72,6 @@ final class TripParticipantService
             'emergency_contact_phone' => $this->requiredString($data['emergency_contact_phone'] ?? '', 'Emergency contact phone is required.'),
             'emergency_contact_relationship' => $this->nullableString($data['emergency_contact_relationship'] ?? null),
             'medical_notes' => $this->nullableString($data['medical_notes'] ?? null),
-            'allergies' => $this->nullableString($data['allergies'] ?? null),
-            'medications' => $this->nullableString($data['medications'] ?? null),
-            'conditions' => $this->nullableString($data['conditions'] ?? null),
-            'physical_limitations' => $this->nullableString($data['physical_limitations'] ?? null),
             'is_minor' => $isMinor,
             'guardian_name' => $this->nullableString($data['guardian_name'] ?? null),
             'guardian_email' => $this->nullableEmail($data['guardian_email'] ?? null),
@@ -144,6 +141,31 @@ final class TripParticipantService
 
         if ($stmt->rowCount() === 0) {
             throw new \InvalidArgumentException('Signature link was not found.');
+        }
+    }
+
+
+    public function saveSignatureForParticipant(int $participantId, string $signatureData, ?string $ip, ?string $userAgent): void
+    {
+        if (!str_starts_with($signatureData, 'data:image/png;base64,')) {
+            throw new \InvalidArgumentException('Please sign the waiver before completing registration.');
+        }
+        if (strlen($signatureData) > 750000) {
+            throw new \InvalidArgumentException('Signature image is too large. Please clear and sign again.');
+        }
+
+        $stmt = $this->db->prepare("UPDATE trip_participants SET
+            signature_data = :signature_data, signed_at = NOW(), signed_ip = :signed_ip,
+            user_agent = :user_agent, participant_status = CASE WHEN participant_status = 'registered' THEN 'signed' ELSE participant_status END,
+            updated_at = NOW() WHERE id = :id");
+        $stmt->execute([
+            'signature_data' => $signatureData,
+            'signed_ip' => $ip,
+            'user_agent' => $userAgent,
+            'id' => $participantId,
+        ]);
+        if ($stmt->rowCount() === 0) {
+            throw new \InvalidArgumentException('Participant registration was not found.');
         }
     }
 
