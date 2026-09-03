@@ -16,7 +16,7 @@ $error = Session::flash('error');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title><?= View::e($title ?? $brandName) ?></title>
-    <link rel="stylesheet" href="/css/app.css?v=0.17.9">
+    <link rel="stylesheet" href="/css/app.css?v=0.17.10">
 </head>
 <body class="ctm-public-body">
 <div class="ctm-public-shell">
