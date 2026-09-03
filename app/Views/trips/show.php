@@ -24,11 +24,26 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
     <div class="panel metric-card">
         <span class="metric-label">Roster</span>
         <strong><?= $activeCount ?><?= $max ? ' / ' . $max : '' ?></strong>
-        <div class="progress"><span style="width: <?= $max ? $percent : 0 ?>%"></span></div>
+        <?php if ($max): ?>
+            <div class="ctm-progress" role="progressbar" aria-label="Trip roster capacity" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $percent ?>">
+                <div class="ctm-progress-bar" style="width: <?= $percent ?>%"></div>
+            </div>
+            <span class="progress-caption"><?= $percent ?>% of capacity</span>
+        <?php else: ?>
+            <span class="progress-caption">No maximum capacity set</span>
+        <?php endif; ?>
     </div>
+    <?php
+    $signedCount = (int)($trip['signed_count'] ?? 0);
+    $signedPercent = $activeCount > 0 ? min(100, (int)round(($signedCount / $activeCount) * 100)) : 0;
+    ?>
     <div class="panel metric-card">
         <span class="metric-label">Waivers Signed</span>
-        <strong><?= (int)($trip['signed_count'] ?? 0) ?></strong>
+        <strong><?= $signedCount ?> / <?= $activeCount ?></strong>
+        <div class="ctm-progress" role="progressbar" aria-label="Waivers signed" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $signedPercent ?>">
+            <div class="ctm-progress-bar" style="width: <?= $signedPercent ?>%"></div>
+        </div>
+        <span class="progress-caption"><?= $signedPercent ?>% signed</span>
         <p class="muted">Participants can sign by link or on the leader’s device.</p>
     </div>
     <div class="panel metric-card">
