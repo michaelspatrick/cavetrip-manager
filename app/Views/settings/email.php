@@ -43,6 +43,13 @@
 </form>
 
 <?php if($settings): ?>
+<form class="card form-stack" method="post" action="/admin/email/settings/test-connection">
+    <?= Csrf::field() ?>
+    <h2>Test SMTP Connection</h2>
+    <p>Tests DNS/network connectivity, TLS negotiation, and SMTP authentication using the saved settings. It does not send a message.</p>
+    <div class="button-row"><button class="button" type="submit">Test SMTP Connection</button></div>
+</form>
+
 <form class="card form-stack" method="post" action="/admin/email/settings/test">
     <?= Csrf::field() ?>
     <h2>Send Test Email</h2>

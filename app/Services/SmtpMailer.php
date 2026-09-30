@@ -6,6 +6,45 @@ namespace CaveTrip\Services;
 
 final class SmtpMailer
 {
+    /** @param array<string,mixed> $settings @return array<string,string|int> */
+    public function testConnection(array $settings, string $password): array
+    {
+        $host = trim((string)($settings['smtp_host'] ?? ''));
+        $port = (int)($settings['smtp_port'] ?? 0);
+        $encryption = (string)($settings['smtp_encryption'] ?? 'tls');
+        $username = trim((string)($settings['smtp_username'] ?? ''));
+        if ($host === '' || $port < 1) throw new \RuntimeException('SMTP host and port are required.');
+
+        $transport = $encryption === 'ssl' ? 'ssl://' : 'tcp://';
+        $context = stream_context_create(['ssl'=>['verify_peer'=>true,'verify_peer_name'=>true,'allow_self_signed'=>false]]);
+        $started = microtime(true);
+        $socket = @stream_socket_client($transport.$host.':'.$port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $context);
+        if (!is_resource($socket)) throw new \RuntimeException("SMTP connection failed to {$host}:{$port}: {$errstr} ({$errno})");
+        stream_set_timeout($socket, 20);
+        try {
+            $banner = $this->expect($socket, [220]);
+            $ehlo = $this->command($socket, 'EHLO ' . $this->hostname(), [250]);
+            if ($encryption === 'tls') {
+                $this->command($socket, 'STARTTLS', [220]);
+                if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new \RuntimeException('Connected, but STARTTLS negotiation failed.');
+                $ehlo = $this->command($socket, 'EHLO ' . $this->hostname(), [250]);
+            }
+            if ($username !== '') {
+                $this->command($socket, 'AUTH LOGIN', [334]);
+                $this->command($socket, base64_encode($username), [334]);
+                $this->command($socket, base64_encode($password), [235]);
+            }
+            try { $this->command($socket, 'QUIT', [221]); } catch (\Throwable) {}
+            return [
+                'host'=>$host, 'port'=>$port, 'encryption'=>$encryption,
+                'authenticated'=>$username !== '' ? 'yes' : 'not requested',
+                'elapsed_ms'=>(int)round((microtime(true)-$started)*1000),
+                'banner'=>trim(strtok($banner, "\r\n") ?: ''),
+                'capabilities'=>trim($ehlo),
+            ];
+        } finally { fclose($socket); }
+    }
+
     /** @param array<string,mixed> $settings */
     public function send(array $settings, string $password, string $to, string $subject, string $textBody): void
     {

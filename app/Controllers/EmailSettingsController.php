@@ -11,6 +11,7 @@ use CaveTrip\Core\View;
 use CaveTrip\Services\EmailService;
 use CaveTrip\Services\EmailSettingsService;
 use CaveTrip\Services\GrottoService;
+use CaveTrip\Services\SmtpMailer;
 
 final class EmailSettingsController extends BaseController
 {
@@ -35,6 +36,25 @@ final class EmailSettingsController extends BaseController
             Session::flash('success', 'Email settings saved.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to save email settings: ' . $e->getMessage());
+        }
+        return Http::redirect('/admin/email/settings');
+    }
+
+    public function testConnection(Application $app): string
+    {
+        Http::requirePostCsrf();
+        $user = $this->requireAdmin($app);
+        try {
+            $settingsService = new EmailSettingsService($app);
+            $settings = $settingsService->findForGrotto($this->grottoId($user));
+            if (!$settings) throw new \RuntimeException('Save Email Settings before testing the connection.');
+            $result = (new SmtpMailer())->testConnection($settings, $settingsService->password($settings));
+            Session::flash('success', sprintf(
+                'SMTP connection successful: %s:%d, %s, authentication %s (%d ms).',
+                $result['host'], $result['port'], strtoupper((string)$result['encryption']), $result['authenticated'], $result['elapsed_ms']
+            ));
+        } catch (\Throwable $e) {
+            Session::flash('error', 'SMTP connection test failed: ' . $e->getMessage());
         }
         return Http::redirect('/admin/email/settings');
     }
