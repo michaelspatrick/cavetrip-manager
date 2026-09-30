@@ -7,6 +7,7 @@ $tripReports = $tripReports ?? [];
 $canManageTrip = (bool)($canManageTrip ?? false);
 $canReport = (bool)($canReport ?? false);
 $canComplete = (bool)($canComplete ?? false);
+$isWaiverAdmin = in_array((string)($currentUser['role'] ?? ''), ['super_admin','admin'], true);
 $shareUrl = app_url('/trip/signup?token=' . (string)($trip['share_token'] ?? ''));
 $activeCount = (int)($trip['registered_count'] ?? 0);
 $max = $trip['max_attendees'] === null ? null : (int)$trip['max_attendees'];
@@ -86,11 +87,21 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
             <p class="muted">Finalize after the active roster is complete and all active participants have signed.</p>
         </div>
         <?php if ($latestWaiver): ?>
-            <a class="button secondary" target="_blank" href="/waivers/view?token=<?= View::e((string)$latestWaiver['public_token']) ?>">View Final Waiver</a>
+            <div class="button-row">
+                <a class="button secondary" target="_blank" href="/waivers/view?token=<?= View::e((string)$latestWaiver['public_token']) ?>">View HTML</a>
+                <a class="button" target="_blank" href="/waivers/pdf?token=<?= View::e((string)$latestWaiver['public_token']) ?>">View PDF</a>
+                <a class="button secondary" href="/waivers/pdf?token=<?= View::e((string)$latestWaiver['public_token']) ?>&download=1">Download PDF</a>
+            </div>
         <?php endif; ?>
     </div>
     <?php if ($latestWaiver): ?>
-        <div class="alert success"><strong>Finalized.</strong> This immutable waiver is preserved with the participant signatures captured at finalization.</div>
+        <div class="alert success"><strong>Finalized.</strong> The PDF and HTML snapshot preserve the waiver text, participant names, and signatures captured at finalization.</div>
+        <?php if ($isWaiverAdmin): ?>
+        <form method="post" action="/trips/waiver/unfinalize?trip_id=<?= (int)$trip['id'] ?>" class="inline-form" onsubmit="return confirm('Remove the finalized test waiver so it can be generated again? Participant signatures will be preserved.');">
+            <?= Csrf::field() ?><button class="button danger" type="submit">Unfinalize Test Waiver</button>
+        </form>
+        <p class="muted">Admin testing tool: removes the generated final waiver only. Existing participant signatures remain intact.</p>
+        <?php endif; ?>
     <?php elseif (empty($trip['waiver_template_id'])): ?>
         <div class="alert error">No waiver template is selected for this trip. Edit the trip and choose a template first.</div>
     <?php else: ?>

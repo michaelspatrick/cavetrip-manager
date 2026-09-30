@@ -58,4 +58,45 @@ final class WaiverController
             'waiver' => $waiver,
         ]);
     }
+    public function pdf(Application $app): string
+    {
+        $token = (string)($_GET['token'] ?? '');
+        $waiver = (new WaiverService($app->db()))->findByToken($token);
+        if ($waiver === null || empty($waiver['pdf_data'])) {
+            http_response_code(404);
+            return View::render($app, 'pages/404', ['title' => 'Waiver PDF Not Found']);
+        }
+        $filename = preg_replace('/[^A-Za-z0-9._-]+/', '-', (string)($waiver['trip_title'] ?? 'trip-waiver')) . '-final-waiver.pdf';
+        header('Content-Type: application/pdf');
+        header('Content-Length: ' . strlen((string)$waiver['pdf_data']));
+        header('Content-Disposition: ' . (isset($_GET['download']) ? 'attachment' : 'inline') . '; filename="' . $filename . '"');
+        header('X-Content-Type-Options: nosniff');
+        return (string)$waiver['pdf_data'];
+    }
+
+    public function unfinalize(Application $app): string
+    {
+        Http::requirePostCsrf();
+        $currentUser = (new AuthService($app->db()))->requireRole(['super_admin', 'admin']);
+        $grottoId = (int)($currentUser['grotto_id'] ?? 0);
+        $tripId = (int)($_GET['trip_id'] ?? 0);
+        $trip = (new TripService($app->db()))->findForGrotto($tripId, $grottoId);
+        if ($trip === null) {
+            Session::flash('error', 'Trip not found.');
+            return Http::redirect('/trips');
+        }
+        try {
+            $count = (new WaiverService($app->db()))->unfinalizeForTesting($tripId);
+            if ($count > 0) {
+                (new AuditLogService($app))->waiverUnfinalized($grottoId, (int)$currentUser['id'], $tripId, $count);
+                Session::flash('success', 'Finalized test waiver removed. Participant signatures were preserved, so you can finalize the trip again.');
+            } else {
+                Session::flash('error', 'This trip does not currently have a finalized waiver.');
+            }
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Unable to unfinalize waiver: ' . $e->getMessage());
+        }
+        return Http::redirect('/trips/show?id=' . $tripId);
+    }
+
 }

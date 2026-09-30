@@ -27,6 +27,7 @@ final class AuditLogService
     public function landownerUpdated(int $grottoId,int $userId,int $landownerId):void{$this->record('landowner.updated','Landowner updated.',$grottoId,$userId,'landowner',$landownerId);}
     public function grottoSettingsUpdated(int $grottoId,int $userId):void{$this->record('grotto.settings_updated','Grotto settings updated.',$grottoId,$userId,'grotto',$grottoId);}
     public function waiverFinalized(int $grottoId,int $userId,int $waiverId,int $tripId):void{$this->record('waiver.finalized','Final waiver generated.',$grottoId,$userId,'generated_waiver',$waiverId,['trip_id'=>$tripId]);}
+    public function waiverUnfinalized(int $grottoId,int $userId,int $tripId,int $deletedCount):void{$this->record('waiver.unfinalized','Finalized test waiver removed for regeneration.',$grottoId,$userId,'trip',$tripId,['deleted_waivers'=>$deletedCount]);}
     public function tripReportCreated(int $grottoId,int $userId,int $reportId,int $tripId):void{$this->record('trip_report.created','Trip report submitted.',$grottoId,$userId,'trip_report',$reportId,['trip_id'=>$tripId]);}
     public function tripReportUpdated(int $grottoId,int $userId,int $reportId,int $tripId):void{$this->record('trip_report.updated','Trip report updated.',$grottoId,$userId,'trip_report',$reportId,['trip_id'=>$tripId]);}
 
