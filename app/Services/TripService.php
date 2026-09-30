@@ -141,6 +141,19 @@ final class TripService
         unset($params['trip_number'],$params['share_token'],$params['trip_leader_user_id']); $stmt->execute($params);
     }
 
+    public function markAllOutSafe(int $id,int $grottoId,int $reportedByUserId,?string $ip=null,?string $userAgent=null):void
+    {
+        $this->db->beginTransaction();
+        try {
+            $stmt=$this->db->prepare("UPDATE trips SET status='completed',callout_status='all_out_safe',updated_at=NOW() WHERE id=:id AND grotto_id=:grotto_id AND status<>'cancelled'");
+            $stmt->execute(['id'=>$id,'grotto_id'=>$grottoId]);
+            if($stmt->rowCount()<1) throw new \InvalidArgumentException('Trip could not be completed.');
+            $event=$this->db->prepare("INSERT INTO trip_callout_events (trip_id,reported_by_user_id,event_type,reported_at,reported_ip,user_agent) VALUES (:trip_id,:user_id,'all_out_safe',NOW(),:ip,:ua)");
+            $event->execute(['trip_id'=>$id,'user_id'=>$reportedByUserId,'ip'=>$ip,'ua'=>$userAgent]);
+            $this->db->commit();
+        } catch (\Throwable $e) { if($this->db->inTransaction())$this->db->rollBack(); throw $e; }
+    }
+
     public function cancel(int $id,int $grottoId,int $cancelledByUserId,string $reason):void
     {
         $stmt=$this->db->prepare("UPDATE trips SET status='cancelled', callout_status='cancelled', cancelled_at=NOW(),
@@ -151,10 +164,10 @@ final class TripService
 
     private function baseSelect():string
     {
-        return "SELECT trips.*, grottos.name AS grotto_name, grottos.logo_url AS grotto_logo_url,
+        return "SELECT trips.*, grottos.name AS grotto_name, grottos.email AS grotto_email, grottos.logo_url AS grotto_logo_url,
                 grottos.logo_file_path AS grotto_logo_file_path, grottos.website_url AS grotto_website_url,
                 caves.name AS cave_name, caves.state AS cave_state,
-                caves.county AS cave_county, landowners.name AS landowner_name, users.name AS leader_name,
+                caves.county AS cave_county, landowners.name AS landowner_name, landowners.email AS landowner_email, users.name AS leader_name,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id=trips.id AND tp.participant_status IN ('registered','signed')) AS registered_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id=trips.id AND tp.participant_status='waitlisted') AS waitlist_count,
                 (SELECT COUNT(*) FROM trip_participants tp WHERE tp.trip_id=trips.id AND tp.signed_at IS NOT NULL AND tp.participant_status IN ('registered','signed')) AS signed_count

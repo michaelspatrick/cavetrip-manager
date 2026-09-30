@@ -13,13 +13,14 @@ use CaveTrip\Services\AuthService;
 use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\TripService;
 use CaveTrip\Services\WaiverService;
+use CaveTrip\Services\NotificationService;
 
 final class WaiverController
 {
     public function finalize(Application $app): string
     {
         Http::requirePostCsrf();
-        $currentUser = (new AuthService($app->db()))->requireRole(['super_admin', 'grotto_admin', 'member']);
+        $currentUser = (new AuthService($app->db()))->requireRole(['super_admin', 'admin', 'member']);
         $grottoId = (int)$currentUser['grotto_id'];
         $tripId = (int)($_GET['trip_id'] ?? 0);
 
@@ -32,8 +33,10 @@ final class WaiverController
         try {
             $participants = (new TripParticipantService($app->db()))->listForTrip($tripId);
             $waiverId = (new WaiverService($app->db()))->finalize($trip, $participants, (int)$currentUser['id']);
-            (new AuditLogService($app->db()))->record($grottoId, (int)$currentUser['id'], 'finalized', 'generated_waiver', $waiverId);
-            Session::flash('success', 'Waiver finalized. Email delivery comes in the next notification release.');
+            (new AuditLogService($app))->waiverFinalized($grottoId,(int)$currentUser['id'],$waiverId,$tripId);
+            $final=(new WaiverService($app->db()))->latestForTrip($tripId);
+            if($final){$notify=new NotificationService($app);$sent=[];foreach($participants as $p){if(in_array((string)($p['participant_status']??''),['registered','signed'],true)){ $email=strtolower(trim((string)($p['email']??''))); if($email!==''&&!isset($sent[$email])){$notify->finalWaiver($trip,$email,(string)$final['public_token']);$sent[$email]=true;}}}foreach(['landowner_email','grotto_email'] as $key){$email=strtolower(trim((string)($trip[$key]??'')));if($email!==''&&!isset($sent[$email])){$notify->finalWaiver($trip,$email,(string)$final['public_token']);$sent[$email]=true;}}}
+            Session::flash('success', 'Waiver finalized. The final waiver is now available from the trip dashboard.');
         } catch (\Throwable $e) {
             Session::flash('error', 'Unable to finalize waiver: ' . $e->getMessage());
         }

@@ -38,7 +38,10 @@ final class EmailSettingsService
         if ($newPassword !== '') $passwordEncrypted = (new SecretService($this->app))->encrypt($newPassword);
 
         $region = trim((string)($data['ses_region'] ?? 'us-east-1')) ?: 'us-east-1';
-        $host = $provider === 'ses' ? 'email-smtp.' . $region . '.amazonaws.com' : trim((string)($data['smtp_host'] ?? ''));
+        $host = trim((string)($data['smtp_host'] ?? ''));
+        if ($host === '' && $provider === 'ses') {
+            $host = 'email-smtp.' . $region . '.amazonaws.com';
+        }
         $port = (int)($data['smtp_port'] ?? 587);
         if ($port < 1 || $port > 65535) throw new \InvalidArgumentException('SMTP port must be between 1 and 65535.');
         $encryption = (string)($data['smtp_encryption'] ?? 'tls');

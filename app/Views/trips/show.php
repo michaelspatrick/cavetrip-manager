@@ -3,6 +3,10 @@ use CaveTrip\Core\Csrf;
 use CaveTrip\Core\View;
 $participants = $participants ?? [];
 $latestWaiver = $latestWaiver ?? null;
+$tripReports = $tripReports ?? [];
+$canManageTrip = (bool)($canManageTrip ?? false);
+$canReport = (bool)($canReport ?? false);
+$canComplete = (bool)($canComplete ?? false);
 $shareUrl = app_url('/trip/signup?token=' . (string)($trip['share_token'] ?? ''));
 $activeCount = (int)($trip['registered_count'] ?? 0);
 $max = $trip['max_attendees'] === null ? null : (int)$trip['max_attendees'];
@@ -16,7 +20,7 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
     </div>
     <div class="button-row">
         <a class="button secondary" href="/trips">All Trips</a>
-        <a class="button" href="/trips/edit?id=<?= (int)$trip['id'] ?>">Edit Trip</a>
+<?php if($canManageTrip): ?><a class="button" href="/trips/edit?id=<?= (int)$trip['id'] ?>">Edit Trip</a><?php endif; ?>
     </div>
 </div>
 
@@ -67,15 +71,15 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
         </dl>
     </section>
 
-    <section class="panel">
+    <?php if($canManageTrip): ?><section class="panel">
         <h2>Share Signup Link</h2>
         <p class="muted">Share this with members or invited guests. Guests can sign up without seeing sensitive cave/location fields.</p>
         <input class="copy-field" value="<?= View::e($shareUrl) ?>" readonly onclick="this.select()">
         <p><a href="<?= View::e('/trip/signup?token=' . (string)$trip['share_token']) ?>" target="_blank">Open signup page</a></p>
-    </section>
+    </section><?php endif; ?>
 </div>
 
-<section class="panel mt">
+<?php if($canManageTrip): ?><section class="panel mt">
     <div class="section-header">
         <div>
             <h2>Waiver Finalization</h2>
@@ -85,18 +89,18 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
             <a class="button secondary" target="_blank" href="/waivers/view?token=<?= View::e((string)$latestWaiver['public_token']) ?>">View Final Waiver</a>
         <?php endif; ?>
     </div>
-    <?php if (empty($trip['waiver_template_id'])): ?>
+    <?php if ($latestWaiver): ?>
+        <div class="alert success"><strong>Finalized.</strong> This immutable waiver is preserved with the participant signatures captured at finalization.</div>
+    <?php elseif (empty($trip['waiver_template_id'])): ?>
         <div class="alert error">No waiver template is selected for this trip. Edit the trip and choose a template first.</div>
     <?php else: ?>
         <form method="post" action="/trips/waiver/finalize?trip_id=<?= (int)$trip['id'] ?>" class="inline-form">
-            <?= Csrf::field() ?>
-            <button class="button" type="submit">Finalize Waiver</button>
+            <?= Csrf::field() ?><button class="button" type="submit">Finalize Waiver</button>
         </form>
-        <p class="muted">Email delivery to the landowner, participants, and grotto address will be wired into the notification release.</p>
     <?php endif; ?>
-</section>
+</section><?php endif; ?>
 
-<section class="panel mt">
+<?php if($canManageTrip): ?><section class="panel mt">
     <div class="section-header">
         <div>
             <h2>Participants</h2>
@@ -146,14 +150,20 @@ $percent = $max ? min(100, (int)round(($activeCount / $max) * 100)) : 0;
         <?php require __DIR__ . '/participant-fields.php'; ?>
         <div class="form-actions full-width"><button class="button" type="submit">Add Participant</button></div>
     </form>
+</section><?php endif; ?>
+
+<section class="panel mt">
+    <div class="section-header"><div><h2>Trip Reports</h2><p class="muted">Each participant may submit a separate report after the trip is completed.</p></div><?php if((string)$trip['status']==='completed' && $canReport): ?><a class="button" href="/trip-reports/create?trip_id=<?= (int)$trip['id'] ?>">Create Trip Report</a><?php endif; ?></div>
+    <?php if($tripReports): ?><div class="table-wrap"><table><thead><tr><th>Author</th><th>Submitted</th><th></th></tr></thead><tbody><?php foreach($tripReports as $report): ?><tr><td><?= View::e((string)$report['author_name']) ?></td><td><?= View::e((string)$report['submitted_at']) ?></td><td><a href="/trip-reports/show?id=<?= (int)$report['id'] ?>">View Report</a></td></tr><?php endforeach; ?></tbody></table></div><?php else: ?><p class="muted"><?= (string)$trip['status']==='completed' ? 'No trip reports have been submitted yet.' : 'Trip reports become available after the trip is completed.' ?></p><?php endif; ?>
 </section>
 
-<section class="panel danger-zone mt">
+<?php if((string)$trip['status']!=='completed' && (string)$trip['status']!=='cancelled' && $canComplete): ?><section class="panel mt"><h2>Trip Safety Status</h2><p>When everyone is safely out, record <strong>All Out Safe</strong>. This completes the trip and opens trip reporting.</p><form method="post" action="/trips/complete?id=<?= (int)$trip['id'] ?>" class="inline-form"><?= Csrf::field() ?><button class="button" type="submit">All Out Safe — Complete Trip</button></form></section><?php endif; ?>
+
+<?php if($canManageTrip): ?><section class="panel danger-zone mt">
     <h2>Cancel Trip</h2>
-    <p class="muted">Cancellation emails will be wired into the notification release.</p>
     <form method="post" action="/trips/cancel?id=<?= (int)$trip['id'] ?>" class="form-stack">
         <?= Csrf::field() ?>
         <label>Cancellation reason<textarea name="cancellation_reason" rows="3"></textarea></label>
         <div class="form-actions"><button class="button danger" type="submit">Cancel Trip</button></div>
     </form>
-</section>
+</section><?php endif; ?>

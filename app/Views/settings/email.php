@@ -20,7 +20,7 @@
         <h3>Amazon SES</h3>
         <p class="muted">Uses Amazon SES SMTP credentials. Your SES From address/domain must be verified, and sandbox accounts can only send to verified recipients.</p>
         <label>AWS Region<input name="ses_region" value="<?= View::e($s['ses_region']??'us-east-1') ?>" placeholder="us-east-1"></label>
-        <p class="help-text">SMTP host is generated automatically as <code>email-smtp.&lt;region&gt;.amazonaws.com</code>.</p>
+        <p class="help-text">Enter the SMTP endpoint shown by Amazon SES. If left blank, CaveTrip Manager falls back to <code>email-smtp.&lt;region&gt;.amazonaws.com</code>.</p>
     </div>
 
     <div id="smtp-fields" class="provider-box">
@@ -55,7 +55,7 @@
 <script>
 (function(){
  const provider=document.getElementById('mail-provider'), ses=document.getElementById('ses-fields'), smtp=document.getElementById('smtp-fields');
- function sync(){ const isSes=provider.value==='ses'; ses.style.display=isSes?'block':'none'; smtp.style.display='block'; const host=smtp.querySelector('[name="smtp_host"]'); if(isSes){host.closest('label').style.display='none';}else{host.closest('label').style.display='block';} }
+ function sync(){ const isSes=provider.value==='ses'; ses.style.display=isSes?'block':'none'; smtp.style.display='block'; const host=smtp.querySelector('[name="smtp_host"]'); host.closest('label').style.display='block'; }
  provider.addEventListener('change',sync); sync();
 })();
 </script>

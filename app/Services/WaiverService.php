@@ -15,48 +15,23 @@ final class WaiverService
     /** @param array<string, mixed> $trip @param array<int, array<string, mixed>> $participants */
     public function finalize(array $trip, array $participants, int $finalizedByUserId): int
     {
-        if (empty($trip['waiver_template_id'])) {
-            throw new \InvalidArgumentException('This trip does not have a waiver template selected.');
-        }
-
-        $activeParticipants = array_values(array_filter($participants, static fn (array $p): bool => in_array($p['participant_status'], ['registered', 'signed'], true)));
-        if ($activeParticipants === []) {
-            throw new \InvalidArgumentException('At least one active participant is required before finalizing a waiver.');
-        }
-
-        foreach ($activeParticipants as $participant) {
-            if (empty($participant['signed_at']) || empty($participant['signature_data'])) {
-                throw new \InvalidArgumentException('All active participants must sign before the waiver can be finalized.');
-            }
-        }
-
-        $stmt = $this->db->prepare('SELECT * FROM waiver_templates WHERE id = :id AND grotto_id = :grotto_id AND active = 1 LIMIT 1');
-        $stmt->execute(['id' => (int)$trip['waiver_template_id'], 'grotto_id' => (int)$trip['grotto_id']]);
-        $template = $stmt->fetch();
-        if (!$template) {
-            throw new \InvalidArgumentException('Selected waiver template was not found or is inactive.');
-        }
-
-        $html = $this->renderFinalHtml($trip, $template, $activeParticipants);
-        $token = TokenService::make();
-
-        $stmt = $this->db->prepare('INSERT INTO generated_waivers
-            (trip_id, waiver_template_id, public_token, final_html, finalized_by_user_id, finalized_at, created_at)
-            VALUES
-            (:trip_id, :waiver_template_id, :public_token, :final_html, :finalized_by_user_id, NOW(), NOW())');
-        $stmt->execute([
-            'trip_id' => (int)$trip['id'],
-            'waiver_template_id' => (int)$trip['waiver_template_id'],
-            'public_token' => $token,
-            'final_html' => $html,
-            'finalized_by_user_id' => $finalizedByUserId,
-        ]);
-
-        $waiverId = (int)$this->db->lastInsertId();
-        $update = $this->db->prepare('UPDATE trips SET status = \'finalized\', updated_at = NOW() WHERE id = :id');
-        $update->execute(['id' => (int)$trip['id']]);
-
-        return $waiverId;
+        if (empty($trip['waiver_template_id'])) throw new \InvalidArgumentException('This trip does not have a waiver template selected.');
+        $existing=$this->latestForTrip((int)$trip['id']); if($existing) return (int)$existing['id'];
+        $activeParticipants=array_values(array_filter($participants,static fn(array $p):bool=>in_array((string)$p['participant_status'],['registered','signed'],true)));
+        if($activeParticipants===[]) throw new \InvalidArgumentException('At least one active participant is required before finalizing a waiver.');
+        foreach($activeParticipants as $participant){if(empty($participant['signed_at'])||empty($participant['signature_data'])) throw new \InvalidArgumentException('All active participants must sign before the waiver can be finalized.');}
+        $stmt=$this->db->prepare('SELECT * FROM waiver_templates WHERE id=:id AND grotto_id=:grotto_id AND active=1 LIMIT 1');
+        $stmt->execute(['id'=>(int)$trip['waiver_template_id'],'grotto_id'=>(int)$trip['grotto_id']]);$template=$stmt->fetch();
+        if(!$template) throw new \InvalidArgumentException('Selected waiver template was not found or is inactive.');
+        $html=$this->renderFinalHtml($trip,$template,$activeParticipants);$token=TokenService::make();
+        $this->db->beginTransaction();
+        try{
+            $lock=$this->db->prepare('SELECT id FROM trips WHERE id=:id FOR UPDATE');$lock->execute(['id'=>(int)$trip['id']]);
+            $existing=$this->latestForTrip((int)$trip['id']);if($existing){$this->db->commit();return(int)$existing['id'];}
+            $stmt=$this->db->prepare('INSERT INTO generated_waivers (trip_id,waiver_template_id,public_token,final_html,finalized_by_user_id,finalized_at,created_at) VALUES (:trip_id,:waiver_template_id,:public_token,:final_html,:finalized_by_user_id,NOW(),NOW())');
+            $stmt->execute(['trip_id'=>(int)$trip['id'],'waiver_template_id'=>(int)$trip['waiver_template_id'],'public_token'=>$token,'final_html'=>$html,'finalized_by_user_id'=>$finalizedByUserId]);
+            $id=(int)$this->db->lastInsertId();$this->db->commit();return$id;
+        }catch(\Throwable $e){if($this->db->inTransaction())$this->db->rollBack();throw$e;}
     }
 
     /** @param array<string,mixed> $trip @return array{name:string,html:string}|null */

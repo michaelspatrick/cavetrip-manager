@@ -9,9 +9,11 @@ use CaveTrip\Core\Http;
 use CaveTrip\Core\Session;
 use CaveTrip\Core\View;
 use CaveTrip\Services\AuditLogService;
+use CaveTrip\Services\AuthService;
 use CaveTrip\Services\TripParticipantService;
 use CaveTrip\Services\TripService;
 use CaveTrip\Services\WaiverService;
+use CaveTrip\Services\NotificationService;
 
 final class TripParticipantController extends BaseController
 {
@@ -110,7 +112,8 @@ final class TripParticipantController extends BaseController
             }
 
             $app->db()->beginTransaction();
-            $participantId = $participantService->addParticipant($trip, $_POST, null);
+            $loggedIn=(new AuthService($app->db()))->user(); $linkedUserId=null; if($loggedIn && (int)($loggedIn['grotto_id']??0)===(int)$trip['grotto_id'] && strtolower(trim((string)$loggedIn['email']))===strtolower(trim((string)($_POST['email']??'')))){$linkedUserId=(int)$loggedIn['id'];}
+            $participantId = $participantService->addParticipant($trip, $_POST, $linkedUserId);
             if ($requiresWaiver) {
                 $participantService->saveSignatureForParticipant(
                     $participantId,
@@ -120,6 +123,7 @@ final class TripParticipantController extends BaseController
                 );
             }
             $app->db()->commit();
+            (new NotificationService($app))->signup($trip, strtolower(trim((string)($_POST['email'] ?? ''))));
 
             Session::flash('success', $requiresWaiver
                 ? 'Registration complete. Your trip signup and waiver signature have been saved.'

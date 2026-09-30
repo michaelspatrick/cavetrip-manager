@@ -21,6 +21,14 @@ final class TripParticipantService
         return $stmt->fetchAll();
     }
 
+    public function isUserOnTrip(int $tripId, int $userId): bool
+    {
+        if ($userId <= 0) return false;
+        $stmt=$this->db->prepare("SELECT 1 FROM trip_participants WHERE trip_id=:trip_id AND user_id=:user_id AND participant_status NOT IN ('removed','cancelled','waitlisted') LIMIT 1");
+        $stmt->execute(['trip_id'=>$tripId,'user_id'=>$userId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
     public function countActiveForTrip(int $tripId): int
     {
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM trip_participants WHERE trip_id = :trip_id AND participant_status IN (\'registered\', \'signed\')');
@@ -32,6 +40,10 @@ final class TripParticipantService
     public function addParticipant(array $trip, array $data, ?int $userId = null): int
     {
         $tripId = (int)$trip['id'];
+        if ($userId === null) {
+            $email=strtolower(trim((string)($data['email']??'')));
+            if($email!=='' && !empty($trip['grotto_id'])){ $u=$this->db->prepare('SELECT id FROM users WHERE grotto_id=:grotto_id AND LOWER(email)=:email AND active=1 LIMIT 1');$u->execute(['grotto_id'=>(int)$trip['grotto_id'],'email'=>$email]);$matched=$u->fetchColumn();if($matched)$userId=(int)$matched; }
+        }
         $maxAttendees = $trip['max_attendees'] === null ? null : (int)$trip['max_attendees'];
         $waitlistEnabled = (int)($trip['waitlist_enabled'] ?? 1) === 1;
         $activeCount = $this->countActiveForTrip($tripId);
