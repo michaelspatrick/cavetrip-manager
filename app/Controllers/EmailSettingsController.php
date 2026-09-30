@@ -65,13 +65,16 @@ final class EmailSettingsController extends BaseController
         $user = $this->requireAdmin($app);
         $to = strtolower(trim((string)($_POST['test_email'] ?? $user['email'] ?? '')));
         try {
-            (new EmailService($app))->send(
+            $result = (new EmailService($app))->send(
                 $this->grottoId($user),
                 $to,
                 'CaveTrip Manager test email',
                 "This is a test email from CaveTrip Manager.\n\nIf you received this message, your email configuration is working.\n"
             );
-            Session::flash('success', 'Test email sent to ' . $to . '.');
+            $accepted = (string)($result['accepted_response'] ?? '');
+            $messageId = trim((string)($result['message_id'] ?? ''));
+            $detail = $messageId !== '' ? ' SES message ID: ' . $messageId . '.' : ' Server response: ' . $accepted;
+            Session::flash('success', 'Amazon SES accepted the test email for delivery to ' . $to . '.' . $detail);
         } catch (\Throwable $e) {
             Session::flash('error', 'Test email failed: ' . $e->getMessage());
         }
